@@ -1,6 +1,6 @@
 # NEMESIS
 
-A **mobile-first** Roblox/Luau UI library for script executors — clean single-window layout, smooth tweened transitions, and broad executor compatibility. Inspired by Rayfield, Obsidian, neverlose-ui, and syde.
+A **mobile-first** Roblox/Luau UI library for script executors — rounded rectangular window, tab sidebar with icons, group boxes, optional two-column layout, a full color picker, smooth tweened transitions, and broad executor compatibility. Inspired by Rayfield, Obsidian, neverlose-ui, and syde.
 
 ```lua
 local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua"))()
@@ -8,12 +8,15 @@ local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/Diabl
 
 ## Features
 
-- 🎯 **Rayfield-style layout** — one window, tab sidebar, single scrolling column.
+- 🪟 **Structured layout** — rounded rectangular window, left tab sidebar (icon + text, active highlight), right content panel.
+- 🧱 **Group boxes & two columns** — `Tab.GroupBox(title)` containers and an optional `columns = 2` layout.
+- 🎨 **Full color picker** — pop-out panel: saturation/value square, hue slider, alpha slider, editable HEX + percentage.
+- 🖼️ **Icons** — Lucide names (`icon = "home"`) or raw asset IDs.
+- 🔎 **Search** — topbar search filters the active tab.
 - 📱 **Mobile / touch support** — responsive scaling, touch-drag, and a floating reopen button on phones.
-- ✨ **Smooth transitions** — every state change (open/close, toggle, tab switch, dropdown, notify) is `TweenService`-animated.
+- ✨ **Smooth transitions** — open/close, **minimize**, toggle, tab switch, dropdown, color panel, notify — all `TweenService`-animated.
 - 🔌 **Executor-friendly** — `gethui` → `protect_gui` → `CoreGui` → `PlayerGui` parenting fallback; every executor global is feature-detected and `pcall`-guarded, so it degrades instead of erroring.
-- 🧩 **Full component set** — Section, Button, Toggle, Slider, Dropdown (single + multi), Input, Keybind, ColorPicker, Label, Paragraph.
-- 🔔 **Notifications** — tweened toast stack.
+- 🧩 **Components** — Section, Button, Toggle, Slider, Dropdown (single + multi), Input, Keybind, ColorPicker, Label, Paragraph + notifications.
 
 ## Quick start
 
@@ -45,16 +48,40 @@ The API is **dot-style** — call methods with `.` (not `:`). Option tables use 
 | `subtitle` | string? | — | Small text under the title. |
 | `accent` | Color3? | purple | Accent color for highlights, toggles, sliders. |
 | `toggleKey` | KeyCode? | `RightShift` | Key to hide/show the window. |
+| `width` | number? | `660` | Window width (px, before scaling). |
+| `height` | number? | `440` | Window height (px, before scaling). |
 
-Returns `Win` with: `Win.Tab(name)`, `Win.Toggle(force?)` (hide/show), `Win.Destroy()`, `Win.Notify(...)`, `Win.Instance`.
+Returns `Win` with: `Win.Tab(name, iconOrOpts?)`, `Win.Toggle(force?)` (minimize/restore), `Win.Destroy()`, `Win.Notify(...)`, `Win.Instance`. The topbar has search, minimize, and close buttons; the whole menu drags by its title bar.
 
-### `Win.Tab(name, icon?)` → `Tab`
+### `Win.Tab(name, iconOrOpts?)` → `Tab`
 
-Adds a sidebar tab and returns a `Tab` with all the element creators below plus `Tab.Section(title)`. The first tab created is shown by default.
+Adds a sidebar tab and returns a `Tab`. The second argument is either an **icon** (Lucide name / asset ID) or an **options table**:
+
+```lua
+Win.Tab("Main", "home")                       -- lucide name
+Win.Tab("Config", 4483362458)                 -- asset id
+Win.Tab("Visuals", { icon = "eye", columns = 2 })  -- two-column content
+```
+
+| Tab option | Type | Description |
+|---|---|---|
+| `icon` | string \| number | Lucide name (`"home"`), `"rbxassetid://N"`, or numeric asset ID. Unknown names fall back to text-only. |
+| `columns` | `1` \| `2` | `2` = side-by-side group-box columns. Default `1`. |
+
+The first tab created is shown by default.
+
+### `Tab.GroupBox(title, side?)` → `GroupBox`
+
+A titled, bordered container. Returns an object with **the same element creators as `Tab`** (Button/Toggle/Slider/Dropdown/Input/Keybind/ColorPicker/Label/Paragraph/Section). In a `columns = 2` tab, pass `side = "left"|"right"` to force a column (otherwise boxes auto-balance).
+
+```lua
+local box = Tab.GroupBox("Combat")
+box.Toggle({ text = "Aim Assist", default = false, flag = "aim" })
+```
 
 ### Components
 
-Every component is created on a `Tab`. Components that hold a value accept an optional `flag` (mirrored into `NEMESIS.Flags[flag]`) and return a **control** with `.Set(value)` and `.Get()`.
+Components can be created on a `Tab` (full width / left column) **or** on a `GroupBox`. Components that hold a value accept an optional `flag` (mirrored into `NEMESIS.Flags[flag]`) and return a **control** with `.Set(value)` and `.Get()`.
 
 ```lua
 Tab.Section("Combat")                  -- header / divider
@@ -74,8 +101,10 @@ Tab.Input({ text = "Name", placeholder = "type…", default = "", clearOnFocus =
 Tab.Keybind({ text = "Bind", default = Enum.KeyCode.E, mode = "Toggle", flag = "f6", callback = function(state) end })
 -- mode: "Toggle" | "Hold" | "Always"
 
-Tab.ColorPicker({ text = "Color", default = Color3.fromRGB(255,0,80), flag = "f7", callback = function(c) end })
--- right-click the swatch to copy hex (if the executor supports setclipboard)
+Tab.ColorPicker({ text = "Color", default = Color3.fromRGB(255,0,80), transparency = 0, flag = "f7", callback = function(color, alpha) end })
+-- click the swatch → full panel (SV square, hue, alpha slider, editable HEX + %).
+-- callback receives (color, transparency). right-click the swatch to copy hex.
+-- control extras: cp.Set(color, alpha?), cp.GetAlpha()
 
 local lbl = Tab.Label("plain text"); lbl.Set("new text")
 Tab.Paragraph({ title = "Title", content = "longer body text" })

@@ -37,6 +37,7 @@ local function newInstance(className)
 	rawset(self, "_props", { ClassName = className, Name = className })
 	rawset(self, "_children", {})
 	rawset(self, "_signals", {})
+	rawset(self, "_attrs", {})
 	return self
 end
 
@@ -75,6 +76,8 @@ METHODS = {
 	GetPropertyChangedSignal = function() return signal() end,
 	Clone = function(self) return newInstance(self._props.ClassName) end,
 	TweenSize = function() end,
+	SetAttribute = function(self, k, v) self._attrs[k] = v end,
+	GetAttribute = function(self, k) return self._attrs[k] end,
 }
 
 instMeta.__index = function(self, k)
@@ -136,6 +139,11 @@ UDim2 = {
 }
 
 TweenInfo = { new = function() return {} end }
+
+ColorSequenceKeypoint = { new = function(t, c) return { Time = t, Value = c } end }
+ColorSequence = { new = function(kp) return { Keypoints = kp } end }
+NumberSequenceKeypoint = { new = function(t, v) return { Time = t, Value = v } end }
+NumberSequence = { new = function(a) return { Keypoints = a } end }
 
 ----------------------------------------------------------------------
 -- Enum (permissive — any chain returns a harmless sentinel)

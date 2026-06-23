@@ -35,9 +35,23 @@ check(type(Win.Tab) == "function", "Win.Tab exists")
 check(type(Win.Toggle) == "function", "Win.Toggle exists")
 check(type(Win.Destroy) == "function", "Win.Destroy exists")
 
-local Tab = Win.Tab("Main")
-local Tab2 = Win.Tab("Second")
-check(type(Tab) == "table" and type(Tab2) == "table", "two tabs created")
+check(type(Win.Toggle) == "function", "Win.Toggle (minimize) exists")
+
+-- icons: numeric asset id resolves; named icon degrades gracefully (no fetch in stub)
+local Tab = Win.Tab("Main", { icon = 4483362458 })
+local Tab2 = Win.Tab("Second", "home") -- name icon, falls back to text under stub
+local Tab3 = Win.Tab("Two Col", { icon = 4483362458, columns = 2 })
+check(type(Tab) == "table" and type(Tab2) == "table", "tabs with icons created")
+check(type(Tab3.GroupBox) == "function", "two-column tab exposes GroupBox")
+
+-- group boxes
+local Box = Tab3.GroupBox("Combat")
+local BoxR = Tab3.GroupBox("Visuals", "right")
+check(type(Box) == "table" and type(Box.Toggle) == "function", "GroupBox exposes element creators")
+local boxTog = Box.Toggle({ text = "Aim", default = true, flag = "aim" })
+check(boxTog.Get() == true, "GroupBox toggle works")
+BoxR.Slider({ text = "FOV", min = 0, max = 180, default = 90, flag = "fov" })
+check(NEMESIS.Flags.fov == 90, "GroupBox slider flag synced")
 
 Tab.Section("Combat")
 
@@ -75,9 +89,10 @@ check(inp.Get() == "world", "Input Set")
 local kb = Tab.Keybind({ text = "Bind", default = Enum.KeyCode.E, mode = "Toggle", flag = "bind", callback = function() end })
 check(type(kb.Get) == "function", "Keybind created")
 
-local cp = Tab.ColorPicker({ text = "Color", default = Color3.fromRGB(255, 0, 0), flag = "color", callback = function() end })
-cp.Set(Color3.fromRGB(0, 255, 0))
+local cp = Tab.ColorPicker({ text = "Color", default = Color3.fromRGB(255, 0, 0), transparency = 0.2, flag = "color", callback = function() end })
+cp.Set(Color3.fromRGB(0, 255, 0), 0.5)
 check(type(cp.Get()) == "table", "ColorPicker Set/Get")
+check(type(cp.GetAlpha) == "function" and cp.GetAlpha() == 0.5, "ColorPicker alpha Set/GetAlpha")
 
 local lbl = Tab.Label("a label")
 lbl.Set("updated")
