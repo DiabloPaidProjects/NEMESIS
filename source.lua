@@ -343,6 +343,7 @@ local TI = {
 	TAB = TweenInfo.new(0.7, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),    -- open, tab switch, page slide
 	EXPAND = TweenInfo.new(0.45, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out),-- dropdown / panels / collapse
 	POP = TweenInfo.new(0.25, Enum.EasingStyle.Back, Enum.EasingDirection.Out),          -- slider handle grab
+	SCROLL = TweenInfo.new(0.22, Enum.EasingStyle.Quad, Enum.EasingDirection.Out),       -- smooth wheel scroll
 }
 TI.OPEN = TI.TAB
 TI.HOVER = TI.EXP
@@ -455,6 +456,23 @@ local function bindHover(button, target, base, hover)
 	end)
 	button.MouseLeave:Connect(function()
 		tween(target, { BackgroundColor3 = base }, TI.HOVER)
+	end)
+end
+
+-- Smooth, eased mouse-wheel scrolling for a ScrollingFrame (desktop). Native
+-- scrolling stays on for touch; here we drive CanvasPosition with a tween.
+local SCROLL_STEP = 90
+local function smoothScroll(sf)
+	if IS_MOBILE then return end
+	sf.ScrollingEnabled = false -- we own the wheel; avoids fighting native steps
+	local goal = 0
+	sf.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseWheel then
+			local maxY = 0
+			pcall(function() maxY = math.max(0, sf.AbsoluteCanvasSize.Y - sf.AbsoluteWindowSize.Y) end)
+			goal = math.clamp(goal - input.Position.Z * SCROLL_STEP, 0, maxY)
+			tween(sf, { CanvasPosition = Vector2.new(0, goal) }, TI.SCROLL)
+		end
 	end)
 end
 
@@ -2144,6 +2162,25 @@ function NEMESIS.Window(opts)
 		ClipsDescendants = true,
 		Parent = content,
 	})
+	-- top/bottom fade overlays: content gently fades into the background at the
+	-- scroll edges (background-colored gradient, sitting above the page content)
+	local FADE_H = 26
+	Create("Frame", {
+		Size = UDim2.new(1, 0, 0, FADE_H),
+		BackgroundColor3 = THEME.Background,
+		BorderSizePixel = 0,
+		ZIndex = 6,
+		Parent = pagesHost,
+	}, { Create("UIGradient", { Rotation = 90, Transparency = numSeq(0, 1) }) })
+	Create("Frame", {
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 0, 1, 0),
+		Size = UDim2.new(1, 0, 0, FADE_H),
+		BackgroundColor3 = THEME.Background,
+		BorderSizePixel = 0,
+		ZIndex = 6,
+		Parent = pagesHost,
+	}, { Create("UIGradient", { Rotation = 90, Transparency = numSeq(1, 0) }) })
 
 	-- open animation
 	root.Size = UDim2.new(0, W, 0, 0)
@@ -2344,6 +2381,7 @@ function NEMESIS.Window(opts)
 					PaddingTop = UDim.new(0, 2), PaddingBottom = UDim.new(0, 16),
 				}),
 			})
+			smoothScroll(pageBody)
 
 			local page = {
 				name = tostring(pname or "Page"),
