@@ -1,40 +1,51 @@
 # NEMESIS
 
-A **mobile-first** Roblox/Luau UI library for script executors — rounded rectangular window, tab sidebar with icons, group boxes, optional two-column layout, a full color picker, smooth tweened transitions, and broad executor compatibility. Inspired by Rayfield, Obsidian, neverlose-ui, and syde.
+A **desktop cheat-menu** Roblox/Luau UI library for script executors — horizontal top tabs, a grouped left sidebar of sub-tabs, collapsible content sections with inline rows, a breadcrumb + config bar, a full color picker, live FPS footer, smooth tweened transitions, and broad executor compatibility. Inspired by neverlose, gamesense, and onetap layouts.
 
 ```lua
 local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua"))()
 ```
 
+> **v2.0** is a layout redesign. The navigation is now two levels deep
+> (**Tab → Group → Page → Section → controls**) and replaces the v1 single-level
+> `Win.Tab` / `Tab.GroupBox` API. It is **desktop-first** but still responsive-scales
+> down on touch.
+
 ## Features
 
-- 🪟 **Structured layout** — rounded rectangular window, left tab sidebar (icon + text, active highlight), right content panel.
-- 🧱 **Group boxes & two columns** — `Tab.GroupBox(title)` containers and an optional `columns = 2` layout.
+- 🧭 **Two-level navigation** — a horizontal **top tab bar** (Combat / Visuals / …) plus a **grouped left sidebar** of sub-tabs (group headers + pages + standalone items, with an active highlight, accent bar, and optional dot).
+- 🗂️ **Collapsible sections** — `Page.Section("GENERAL")` cards whose header chevron collapses the rows.
+- ↔️ **Inline rows** — label on the left, control on the right, hairline separators between rows (the classic cheat-menu layout).
+- 🧭 **Breadcrumb + config bar** — auto `Tab › Group › Page` breadcrumb, a config dropdown, a save button, and a 3-dot menu in the content header.
+- 📊 **Status footer** — game name, connection state, live FPS, and folder/save config buttons.
 - 🎨 **Full color picker** — pop-out panel: saturation/value square, hue slider, alpha slider, editable HEX + percentage.
-- 🖼️ **Icons** — Lucide names (`icon = "home"`) or raw asset IDs.
-- 🔎 **Search** — topbar search filters the active tab.
-- 📱 **Mobile / touch support** — responsive scaling, touch-drag, and a floating reopen button on phones.
-- ✨ **Rayfield-style elements & animations** — 45px rows with a subtle stroke, sliding recoloring toggles, sliders with a draggable handle, smooth dropdown expand + arrow spin, button click-flash, focus-tinted inputs/keybinds — all on Rayfield's Exponential easing (open/minimize/tab-switch/color-panel/notify included).
-- 🔌 **Executor-friendly** — `gethui` → `protect_gui` → `CoreGui` → `PlayerGui` parenting fallback; every executor global is feature-detected and `pcall`-guarded, so it degrades instead of erroring.
-- 🧩 **Components** — Section, Button, Toggle, Slider, Dropdown (single + multi), Input, Keybind, ColorPicker, Label, Paragraph + notifications.
+- 🖼️ **Icons** — Lucide names (`icon = "crosshair"`) or raw asset IDs.
+- 🔎 **Search** — top-bar search filters the active page (Ctrl+K to focus).
+- 📱 **Touch support** — responsive scaling, touch-drag, a floating reopen button on phones.
+- ⌨️ **Mouse-button keybinds** — keybinds accept `Enum.KeyCode` values or mouse strings like `"MOUSE5"`.
+- 🔌 **Executor-friendly** — `gethui` → `protect_gui` → `CoreGui` → `PlayerGui` parenting fallback; every executor global is feature-detected and `pcall`-guarded.
+- 🧩 **Components** — Button, Toggle, Slider, Dropdown (single + multi), Input, Keybind, ColorPicker, Label, Paragraph + notifications.
 
 ## Quick start
 
 ```lua
 local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua"))()
 
-local Win = NEMESIS.Window({ title = "NEMESIS", subtitle = "by you" })
-local Tab = Win.Tab("Main")
+local Win = NEMESIS.Window({ title = "NEMESIS", game = "CS2", configs = { "HvH", "Legit" } })
 
-Tab.Section("Combat")
-Tab.Toggle({ text = "Auto Farm", default = false, flag = "autofarm", callback = function(on)
-    print("Auto farm:", on)
-end })
+local Combat  = Win.Tab("Combat")                                  -- top tab
+local Aimbot  = Combat.Group("AIMBOT")                             -- sidebar group
+local General = Aimbot.Page("General", { icon = "crosshair", dot = true })  -- sub-tab
+
+local gen = General.Section("GENERAL")                             -- collapsible section
+gen.Toggle({ text = "Enable", default = true, flag = "aim_enable" })
+gen.Dropdown({ text = "Weapon Group", options = { "Rifles", "Pistols" }, default = "Rifles" })
+gen.Keybind({ text = "Keybind", default = "MOUSE5", mode = "Hold" })
 
 NEMESIS.Notify({ title = "Loaded", content = "NEMESIS ready", duration = 4 })
 ```
 
-See [`example.lua`](example.lua) for a full demo of every component.
+See [`example.lua`](example.lua) for a full screen reproduction and [`test_all.lua`](test_all.lua) for every component.
 
 ## API
 
@@ -44,73 +55,87 @@ The API is **dot-style** — call methods with `.` (not `:`). Option tables use 
 
 | Option | Type | Default | Description |
 |---|---|---|---|
-| `title` | string | `"NEMESIS"` | Window title. |
-| `subtitle` | string? | — | Small text under the title. |
-| `accent` | Color3? | purple | Accent color for highlights, toggles, sliders. |
+| `title` | string | `"NEMESIS"` | Wordmark next to the logo. |
+| `accent` | Color3? | purple | Accent for highlights, toggles, sliders, underline. |
+| `game` | string? | `"Game"` | Footer game name (next to the green status dot). |
+| `status` | string? | `"Connected"` | Footer status line under the game name. |
+| `configs` | string[]? | `{ "Default" }` | Options for the content-header config dropdown. |
 | `toggleKey` | KeyCode? | `RightShift` | Key to hide/show the window. |
-| `width` | number? | `660` | Window width (px, before scaling). |
-| `height` | number? | `440` | Window height (px, before scaling). |
+| `width` | number? | `960` (desktop) | Window width (px, before scaling). |
+| `height` | number? | `640` (desktop) | Window height (px, before scaling). |
+| `onSave` | function? | — | Fired by the save buttons (else a "Saved" toast). |
+| `onConfig` | function(name)? | — | Fired when the config dropdown changes. |
+| `onMenu` / `onFolder` | function? | — | Fired by the 3-dot / folder buttons. |
 
-Returns `Win` with: `Win.Tab(name, iconOrOpts?)`, `Win.Toggle(force?)` (minimize/restore), `Win.Destroy()`, `Win.Notify(...)`, `Win.Instance`. The topbar has search, minimize, and close buttons; the whole menu drags by its title bar.
+Returns `Win` with: `Win.Tab(name)`, `Win.Toggle(force?)` (minimize/restore), `Win.Destroy()`, `Win.Notify(...)`, `Win.Instance`. The top bar has search + minimize + close; the menu drags by its top bar and resizes from the dotted bottom-right grip.
 
-### `Win.Tab(name, iconOrOpts?)` → `Tab`
+### `Win.Tab(name)` → `Tab`
 
-Adds a sidebar tab and returns a `Tab`. The second argument is either an **icon** (Lucide name / asset ID) or an **options table**:
+Adds a **top-bar tab** (and its own sidebar) and returns a `Tab`. The first tab created is shown by default.
 
 ```lua
-Win.Tab("Main", "home")                       -- lucide name
-Win.Tab("Config", 4483362458)                 -- asset id
-Win.Tab("Visuals", { icon = "eye", columns = 2 })  -- two-column content
+local Combat = Win.Tab("Combat")
+
+Combat.Group("AIMBOT")              -- sidebar group header → has .Page(...)
+Combat.Page("Misc", { icon = "x" }) -- standalone sidebar item (no group header)
 ```
 
-| Tab option | Type | Description |
+| `Tab` method | Returns | Description |
 |---|---|---|
-| `icon` | string \| number | Lucide name (`"home"`), `"rbxassetid://N"`, or numeric asset ID. Unknown names fall back to text-only. |
-| `columns` | `1` \| `2` | `2` = side-by-side group-box columns. Default `1`. |
+| `Tab.Group(name)` | `Group` | A sidebar section header (purple uppercase). Subsequent groups get a divider above them. |
+| `Tab.Page(name, opts?)` | `Page` | A **standalone** sidebar sub-tab (rendered below the groups). |
 
-The first tab created is shown by default.
+### `Group.Page(name, opts?)` → `Page`
 
-### `Tab.GroupBox(title, side?)` → `GroupBox`
+A sidebar sub-tab under a group. `opts`:
 
-A titled, bordered container. Returns an object with **the same element creators as `Tab`** (Button/Toggle/Slider/Dropdown/Input/Keybind/ColorPicker/Label/Paragraph/Section). In a `columns = 2` tab, pass `side = "left"|"right"` to force a column (otherwise boxes auto-balance).
+| Page option | Type | Description |
+|---|---|---|
+| `icon` | string \| number | Lucide name, `"rbxassetid://N"`, or numeric asset ID. |
+| `dot` | boolean | Show an accent dot on the right when this page is active. |
+
+The first page created in a tab is its default-active page. Clicking a page swaps the content area; the breadcrumb updates to `Tab › Group › Page`.
+
+### `Page.Section(title?)` → `Section`
+
+A collapsible card in the content area. Click the header chevron to collapse it. Returns a host with the element creators below. (`Page` also exposes those creators directly — they go into a lazily-created untitled section.)
 
 ```lua
-local box = Tab.GroupBox("Combat")
-box.Toggle({ text = "Aim Assist", default = false, flag = "aim" })
+local s = General.Section("GENERAL")
+s.Toggle({ text = "Enable", default = true })
 ```
 
 ### Components
 
-Components can be created on a `Tab` (full width / left column) **or** on a `GroupBox`. Components that hold a value accept an optional `flag` (mirrored into `NEMESIS.Flags[flag]`) and return a **control** with `.Set(value)` and `.Get()`.
+Created on a `Section` (or directly on a `Page`). Value components accept an optional `flag` (mirrored into `NEMESIS.Flags[flag]`) and return a **control** with `.Set(value)` / `.Get()`.
 
 ```lua
-Tab.Section("Combat")                  -- header / divider
+s.Button({ text = "Execute", button = "Run", callback = function() end })
 
-Tab.Button({ text = "Execute", callback = function() end })
-
-local t = Tab.Toggle({ text = "Toggle", default = false, flag = "f1", callback = function(v) end })
+local t = s.Toggle({ text = "Toggle", default = false, flag = "f1", callback = function(v) end })
 t.Set(true); print(t.Get())
 
-Tab.Slider({ text = "Speed", min = 0, max = 100, default = 50, increment = 1, suffix = " st", flag = "f2", callback = function(v) end })
+s.Slider({ text = "Point Scale", min = 0, max = 1, default = 0.65, increment = 0.01, suffix = "", flag = "f2", callback = function(v) end })
+-- decimals auto from increment (<1 → 2dp); override with `decimals = N`.
 
-Tab.Dropdown({ text = "Mode", options = {"A","B","C"}, default = "A", flag = "f3", callback = function(v) end })
-Tab.Dropdown({ text = "Multi", options = {"x","y","z"}, multi = true, default = {"x"}, flag = "f4", callback = function(list) end })
+s.Dropdown({ text = "Mode", options = {"A","B","C"}, default = "A", flag = "f3", callback = function(v) end })
+s.Dropdown({ text = "Targets", options = {"x","y","z"}, multi = true, default = {"x"}, flag = "f4", callback = function(list) end })
 
-Tab.Input({ text = "Name", placeholder = "type…", default = "", clearOnFocus = false, flag = "f5", callback = function(text) end })
+s.Input({ text = "Name", placeholder = "type…", default = "", clearOnFocus = false, flag = "f5", callback = function(text) end })
 
-Tab.Keybind({ text = "Bind", default = Enum.KeyCode.E, mode = "Toggle", flag = "f6", callback = function(state) end })
--- mode: "Toggle" | "Hold" | "Always"
+s.Keybind({ text = "Keybind", default = "MOUSE5", mode = "Hold", flag = "f6", callback = function(state) end })
+-- default: Enum.KeyCode value OR a mouse string ("MOUSE1"/"MOUSE2"/"MOUSE3"; "MOUSE4"/"MOUSE5" display only)
+-- mode: "Toggle" | "Hold" | "Always". Click the field then press a key/right-or-middle mouse to rebind (Esc clears).
 
-Tab.ColorPicker({ text = "Color", default = Color3.fromRGB(255,0,80), transparency = 0, flag = "f7", callback = function(color, alpha) end })
--- click the swatch → full panel (SV square, hue, alpha slider, editable HEX + %).
--- callback receives (color, transparency). right-click the swatch to copy hex.
+s.ColorPicker({ text = "Color", default = Color3.fromRGB(255,0,80), transparency = 0, flag = "f7", callback = function(color, alpha) end })
+-- click the swatch → full panel (SV square, hue, alpha, editable HEX + %). right-click to copy hex.
 -- control extras: cp.Set(color, alpha?), cp.GetAlpha()
 
-local lbl = Tab.Label("plain text"); lbl.Set("new text")
-Tab.Paragraph({ title = "Title", content = "longer body text" })
+local lbl = s.Label("plain text"); lbl.Set("new text")
+s.Paragraph({ title = "Title", content = "longer body text" })
 ```
 
-**Control methods** (returned by Toggle / Slider / Dropdown / Input / Keybind / ColorPicker / Label):
+**Control methods** (Toggle / Slider / Dropdown / Input / Keybind / ColorPicker / Label):
 - `control.Set(value)` — set the value programmatically (fires the callback).
 - `control.Get()` — read the current value.
 - Dropdown also has `control.SetOptions({...})` and `control.Toggle(force?)`.
@@ -123,27 +148,30 @@ NEMESIS.Notify({ title = "Title", content = "Body", duration = 4 })
 
 ### `NEMESIS.Flags`
 
-Every component with a `flag` writes its current value to `NEMESIS.Flags[flag]`, so you can read all state at once:
+Every component with a `flag` writes its current value to `NEMESIS.Flags[flag]`:
 
 ```lua
-if NEMESIS.Flags.autofarm then ... end
+if NEMESIS.Flags.aim_enable then ... end
 ```
 
-> Note: v1 keeps flags **in memory** for the session. Disk-based config saving is planned for a later version.
+> Flags are kept **in memory** for the session. Disk-based config saving is planned for a later version (the save / folder buttons currently fire `onSave` / `onFolder`).
 
 ## Mobile
 
 - The window auto-scales to the device viewport and uses larger touch targets on phones.
-- The title bar is drag-movable with both mouse and touch.
+- The top bar is drag-movable with both mouse and touch.
 - On touch devices a draggable floating **N** button appears to hide/show the menu (the keyboard `toggleKey` still works on desktop).
-- Honors device safe-area insets (notches) where supported.
 
-## Executor compatibility
+## Testing
 
-NEMESIS targets the common executor surface and never hard-errors on a missing API:
-- **GUI parent:** `gethui()` → `get_hidden_gui()` → `syn.protect_gui` + `CoreGui` → `PlayerGui`.
-- **Clipboard:** `setclipboard` / `toclipboard` (color hex copy) — optional.
-- No file or HTTP dependency at runtime, so it loads even on minimal executors.
+There is no Roblox runtime offline, so a stub mock is used to verify the library **parses, constructs every element, and that `.Set`/`.Get` behave**:
+
+```sh
+lua test/smoke.lua          # builds the full API under test/stub.lua
+luau-analyze source.lua     # syntax / type check
+```
+
+Visual and touch behaviour is validated in-executor.
 
 ## License
 

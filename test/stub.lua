@@ -27,6 +27,8 @@ local EVENT_KEYS = {
 	MouseButton1Click = true, MouseButton2Click = true, MouseButton1Down = true,
 	MouseButton1Up = true, MouseEnter = true, MouseLeave = true, MouseMoved = true,
 	FocusLost = true, Focused = true, Changed = true, Activated = true,
+	-- RunService frame signals (used by the live FPS counter)
+	Heartbeat = true, RenderStepped = true, Stepped = true,
 }
 
 local METHODS
