@@ -304,8 +304,8 @@ local FONT_MED = Enum.Font.GothamMedium
 local FONT_BOLD = Enum.Font.GothamBold
 
 -- Inline-row layout metrics (scaled by the window's UIScale at runtime)
-local ROW_H = 46          -- height of a setting row
-local ROW_PAD = 16        -- horizontal inset inside a row / section
+local ROW_H = 38          -- height of a setting row (compact)
+local ROW_PAD = 14        -- horizontal inset inside a row / section
 -- Right-side control widths are a FRACTION of the row, so they fit any column
 -- count (1 / 2 / 3) and resize. Label takes the complementary fraction.
 local FIELD_FRAC = 0.5    -- dropdown / keybind / input field width fraction
@@ -642,22 +642,22 @@ local function rowText(parent, text, desc, reserveScale, reservePx)
 		})
 		Create("TextLabel", {
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 16),
+			Size = UDim2.new(1, 0, 0, 15),
 			Font = FONT_MED,
 			Text = tostring(text or ""),
 			TextColor3 = THEME.Text,
-			TextSize = 14,
+			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			Parent = col,
 		})
 		Create("TextLabel", {
 			BackgroundTransparency = 1,
-			Size = UDim2.new(1, 0, 0, 13),
+			Size = UDim2.new(1, 0, 0, 12),
 			Font = FONT,
 			Text = tostring(desc),
 			TextColor3 = THEME.SubText,
-			TextSize = 12,
+			TextSize = 11,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			Parent = col,
@@ -670,7 +670,7 @@ local function rowText(parent, text, desc, reserveScale, reservePx)
 		Font = FONT_MED,
 		Text = tostring(text or ""),
 		TextColor3 = THEME.Text,
-		TextSize = 14,
+		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Center,
 		TextTruncate = Enum.TextTruncate.AtEnd,
@@ -683,7 +683,7 @@ local function fieldBox(row, frac)
 	return Create("Frame", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, 0, 0.5, 0),
-		Size = UDim2.new(frac or FIELD_FRAC, 0, 0, 32),
+		Size = UDim2.new(frac or FIELD_FRAC, 0, 0, 28),
 		BackgroundColor3 = THEME.Element,
 		Parent = row,
 	}, { corner(8), stroke(THEME.ElementStroke, 1, 0.35) })
@@ -795,23 +795,23 @@ end
 function Elements.Toggle(parent, accent, opts)
 	opts = opts or {}
 	local state = opts.default and true or false
-	local row = newRow(parent, opts.desc and 58 or ROW_H)
-	rowText(row, opts.text, opts.desc, 0, 64)
+	local row = newRow(parent, opts.desc and 50 or ROW_H)
+	rowText(row, opts.text, opts.desc, 0, 52)
 
 	local track = Create("Frame", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, 0, 0.5, 0),
-		Size = UDim2.new(0, 44, 0, 24),
+		Size = UDim2.new(0, 40, 0, 22),
 		BackgroundColor3 = THEME.ToggleOff,
 		Parent = row,
-	}, { corner(12) })
+	}, { corner(11) })
 	local knob = Create("Frame", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 3, 0.5, 0),
-		Size = UDim2.new(0, 18, 0, 18),
+		Size = UDim2.new(0, 16, 0, 16),
 		BackgroundColor3 = THEME.Knob,
 		Parent = track,
-	}, { corner(9) })
+	}, { corner(8) })
 	local click = Create("TextButton", {
 		BackgroundTransparency = 1,
 		Size = UDim2.new(1, ROW_PAD * 2, 1, 0),
@@ -824,7 +824,7 @@ function Elements.Toggle(parent, accent, opts)
 	local function render(animate)
 		local info = animate and TI.FAST or TweenInfo.new(0)
 		tween(track, { BackgroundColor3 = state and accent or THEME.ToggleOff }, info)
-		tween(knob, { Position = state and UDim2.new(1, -21, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) }, info)
+		tween(knob, { Position = state and UDim2.new(1, -19, 0.5, 0) or UDim2.new(0, 3, 0.5, 0) }, info)
 	end
 	function control.Set(v, silent)
 		state = v and true or false
@@ -897,11 +897,11 @@ function Elements.Slider(parent, accent, opts)
 	local handle = Create("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new((value - min) / (max - min), 0, 0.5, 0),
-		Size = UDim2.new(0, 13, 0, 13),
+		Size = UDim2.new(0, 12, 0, 12),
 		BackgroundColor3 = accent,
 		ZIndex = 2,
 		Parent = bar,
-	}, { corner(7), stroke(THEME.Background, 2, 0) })
+	}, { corner(6), stroke(THEME.Background, 2, 0) })
 
 	local control = {}
 	local function setFromAlpha(alpha, fire, instant)
@@ -929,12 +929,12 @@ function Elements.Slider(parent, accent, opts)
 	bindBarDrag(bar, function(rel) setFromAlpha(rel, true, true) end)
 	bar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			tween(handle, { Size = UDim2.new(0, 17, 0, 17) }, TI.POP)
+			tween(handle, { Size = UDim2.new(0, 15, 0, 15) }, TI.POP)
 		end
 	end)
 	UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			tween(handle, { Size = UDim2.new(0, 13, 0, 13) }, TI.POP)
+			tween(handle, { Size = UDim2.new(0, 12, 0, 12) }, TI.POP)
 		end
 	end)
 
@@ -1263,16 +1263,16 @@ function Elements.ColorPicker(parent, accent, opts)
 	local h, s, v = value:ToHSV()
 
 	local row = newRow(parent, ROW_H)
-	rowText(row, opts.text, opts.desc, 0, 64)
+	rowText(row, opts.text, opts.desc, 0, 52)
 	local swatch = Create("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
 		Position = UDim2.new(1, 0, 0.5, 0),
-		Size = UDim2.new(0, 46, 0, 26),
+		Size = UDim2.new(0, 40, 0, 22),
 		BackgroundColor3 = value,
 		Text = "",
 		AutoButtonColor = false,
 		Parent = row,
-	}, { corner(7), stroke(THEME.Stroke, 1, 0.2) })
+	}, { corner(6), stroke(THEME.Stroke, 1, 0.2) })
 
 	local control = {}
 	local panel, svBase, svDot, hueDot, alphaBar, alphaDot, hexBox, pctLabel
@@ -1495,7 +1495,7 @@ local function makeSection(host, accent, title)
 
 	if title and title ~= "" then
 		local header = Create("TextButton", {
-			Size = UDim2.new(1, 0, 0, 42),
+			Size = UDim2.new(1, 0, 0, 34),
 			BackgroundTransparency = 1,
 			AutoButtonColor = false,
 			Text = "",
@@ -1510,7 +1510,7 @@ local function makeSection(host, accent, title)
 			Font = FONT_BOLD,
 			Text = string.upper(tostring(title)),
 			TextColor3 = accent,
-			TextSize = 12,
+			TextSize = 11,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = header,
 		})
@@ -1593,8 +1593,8 @@ function NEMESIS.Window(opts)
 	ensureRoot()
 
 	local scale = computeScale()
-	local W = opts.width or (IS_MOBILE and 620 or 960)
-	local H = opts.height or (IS_MOBILE and 460 or 640)
+	local W = opts.width or (IS_MOBILE and 600 or 900)
+	local H = opts.height or (IS_MOBILE and 440 or 600)
 	local TOPBAR_H = 60
 	local SIDEBAR_W = IS_MOBILE and 168 or 212
 	local FOOTER_H = 96
@@ -1719,13 +1719,13 @@ function NEMESIS.Window(opts)
 	})
 	-- segmented tab container (one rounded bordered bar holding all tabs)
 	local tabBar = Create("Frame", {
-		Size = UDim2.new(0, 0, 0, 44),
+		Size = UDim2.new(0, 0, 0, 38),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundColor3 = THEME.Element,
 		BackgroundTransparency = 0.35,
 		Parent = tabArea,
 	}, {
-		corner(12),
+		corner(10),
 		stroke(THEME.Stroke, 1, 0.3),
 		Create("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
@@ -1834,7 +1834,7 @@ function NEMESIS.Window(opts)
 		Size = UDim2.new(0, searchW, 0, 34),
 		BackgroundColor3 = THEME.Element,
 		Parent = topbar,
-	}, { corner(9), stroke(THEME.Stroke, 1, 0.3) })
+	}, { corner(10), stroke(THEME.Stroke, 1, 0.3) })
 	local searchPillStroke = searchPill:FindFirstChildOfClass("UIStroke")
 	local searchIcon = Create("ImageLabel", {
 		AnchorPoint = Vector2.new(0, 0.5),
@@ -1938,7 +1938,7 @@ function NEMESIS.Window(opts)
 		Font = FONT_MED,
 		Text = "",
 		TextColor3 = THEME.SubText,
-		TextSize = 14,
+		TextSize = 13,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = header,
 	})
@@ -2073,26 +2073,26 @@ function NEMESIS.Window(opts)
 	function Win.Tab(name, icon)
 		local tab = { name = tostring(name or "Tab"), pages = {}, activePage = nil }
 
-		-- top-tab segment: text only; active = subtle highlight + accent underline
+		-- top-tab segment: text only; active = filled highlight + accent underline
 		local btn = Create("TextButton", {
 			Size = UDim2.new(0, 0, 1, 0),
 			AutomaticSize = Enum.AutomaticSize.X,
-			BackgroundColor3 = THEME.ElementHover,
+			BackgroundColor3 = Color3.fromRGB(48, 50, 64),
 			BackgroundTransparency = 1,
 			AutoButtonColor = false,
 			Font = FONT_MED,
 			Text = tostring(name or "Tab"),
 			TextColor3 = THEME.SubText,
-			TextSize = 15,
+			TextSize = 14,
 			Parent = tabBar,
 		}, {
-			corner(9),
-			Create("UIPadding", { PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18) }),
+			corner(8),
+			Create("UIPadding", { PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14) }),
 		})
 		local underline = Create("Frame", {
 			AnchorPoint = Vector2.new(0.5, 1),
 			Position = UDim2.new(0.5, 0, 1, -3),
-			Size = UDim2.new(1, -24, 0, 2),
+			Size = UDim2.new(1, -20, 0, 2),
 			BackgroundColor3 = accent,
 			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
@@ -2127,7 +2127,7 @@ function NEMESIS.Window(opts)
 		local function makePage(pname, popts, groupName, parentFrame)
 			popts = popts or {}
 			local row = Create("TextButton", {
-				Size = UDim2.new(1, 0, 0, 36),
+				Size = UDim2.new(1, 0, 0, 32),
 				BackgroundColor3 = THEME.SidebarActive,
 				BackgroundTransparency = 1,
 				AutoButtonColor = false,
@@ -2137,7 +2137,7 @@ function NEMESIS.Window(opts)
 			local accentBar = Create("Frame", {
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.new(0, 0, 0.5, 0),
-				Size = UDim2.new(0, 3, 0, 18),
+				Size = UDim2.new(0, 3, 0, 16),
 				BackgroundColor3 = accent,
 				BorderSizePixel = 0,
 				Visible = false,
@@ -2149,8 +2149,8 @@ function NEMESIS.Window(opts)
 				iconImg = Create("ImageLabel", {
 					BackgroundTransparency = 1,
 					AnchorPoint = Vector2.new(0, 0.5),
-					Position = UDim2.new(0, 14, 0.5, 0),
-					Size = UDim2.new(0, 18, 0, 18),
+					Position = UDim2.new(0, 12, 0.5, 0),
+					Size = UDim2.new(0, 16, 0, 16),
 					ImageColor3 = THEME.SubText,
 					Parent = row,
 				})
@@ -2158,12 +2158,12 @@ function NEMESIS.Window(opts)
 			end
 			local label = Create("TextLabel", {
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, hasIcon and 42 or 16, 0, 0),
-				Size = UDim2.new(1, hasIcon and -54 or -28, 1, 0),
+				Position = UDim2.new(0, hasIcon and 38 or 14, 0, 0),
+				Size = UDim2.new(1, hasIcon and -48 or -24, 1, 0),
 				Font = FONT_MED,
 				Text = tostring(pname or "Page"),
 				TextColor3 = THEME.SubText,
-				TextSize = 14,
+				TextSize = 13,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				Parent = row,
@@ -2189,7 +2189,7 @@ function NEMESIS.Window(opts)
 
 			-- panels laid out across N columns (the one-pager grid)
 			local ncols = math.clamp(math.floor(popts.columns or windowColumns), 1, 3)
-			local COL_GAP = 12
+			local COL_GAP = 10
 			local colOff = math.floor(COL_GAP * (ncols - 1) / ncols + 0.5)
 			local columnsHolder = Create("Frame", {
 				Size = UDim2.new(1, 0, 0, 0),
@@ -2213,7 +2213,7 @@ function NEMESIS.Window(opts)
 					LayoutOrder = i,
 					Parent = columnsHolder,
 				}, {
-					Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 14) }),
+					Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 10) }),
 				})
 				colCount[i] = 0
 			end
@@ -2291,13 +2291,13 @@ function NEMESIS.Window(opts)
 			})
 			-- boxed, clickable header
 			local header = Create("TextButton", {
-				Size = UDim2.new(1, 0, 0, 38),
+				Size = UDim2.new(1, 0, 0, 32),
 				BackgroundColor3 = THEME.Element,
 				BackgroundTransparency = 0.4,
 				AutoButtonColor = false,
 				Text = "",
 				Parent = container,
-			}, { corner(8), stroke(THEME.Stroke, 1, 0.3), padXY(14, 0) })
+			}, { corner(8), stroke(THEME.Stroke, 1, 0.3), padXY(12, 0) })
 			Create("TextLabel", {
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.new(0, 0, 0.5, 0),
@@ -2306,7 +2306,7 @@ function NEMESIS.Window(opts)
 				Font = FONT_BOLD,
 				Text = string.upper(tostring(gname or "Group")),
 				TextColor3 = accent,
-				TextSize = 11,
+				TextSize = 10,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				Parent = header,
 			})
