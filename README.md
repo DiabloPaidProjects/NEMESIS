@@ -56,6 +56,7 @@ The API is **dot-style** — call methods with `.` (not `:`). Option tables use 
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `title` | string | `"NEMESIS"` | Wordmark next to the logo. |
+| `logo` | number \| string? | — | Roblox image/decal ID (or `"rbxassetid://N"`) for the logo mark. Falls back to a purple "N" tile. |
 | `accent` | Color3? | purple | Accent for highlights, toggles, sliders, underline. |
 | `game` | string? | `"Game"` | Footer game name (next to the green status dot). |
 | `status` | string? | `"Connected"` | Footer status line under the game name. |
@@ -92,7 +93,6 @@ A sidebar sub-tab under a group. `opts`:
 | Page option | Type | Description |
 |---|---|---|
 | `icon` | string \| number | Lucide name, `"rbxassetid://N"`, or numeric asset ID. |
-| `dot` | boolean | Show an accent dot on the right when this page is active. |
 
 The first page created in a tab is its default-active page. Clicking a page swaps the content area; the breadcrumb updates to `Tab › Group › Page`.
 

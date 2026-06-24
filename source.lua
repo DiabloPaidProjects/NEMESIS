@@ -1576,14 +1576,16 @@ function NEMESIS.Window(opts)
 		BorderSizePixel = 0,
 		Parent = root,
 	}, { corner(RADIUS) })
-	Create("Frame", {
+	-- bottom filler squares the topbar's lower corners so it meets the body;
+	-- hidden while minimized so the bar shows its rounded bottom corners
+	local topbarFiller = Create("Frame", {
 		Position = UDim2.new(0, 0, 1, -RADIUS),
 		Size = UDim2.new(1, 0, 0, RADIUS),
 		BackgroundColor3 = THEME.Topbar,
 		BorderSizePixel = 0,
 		Parent = topbar,
 	})
-	Create("Frame", {
+	local topbarDivider = Create("Frame", {
 		Position = UDim2.new(0, 0, 1, -1),
 		Size = UDim2.new(1, 0, 0, 1),
 		BackgroundColor3 = THEME.Stroke,
@@ -1594,18 +1596,42 @@ function NEMESIS.Window(opts)
 	})
 	makeDraggable(root, topbar)
 
-	-- logo mark
-	Create("TextLabel", {
-		Position = UDim2.new(0, 18, 0.5, 0),
-		AnchorPoint = Vector2.new(0, 0.5),
-		Size = UDim2.new(0, 34, 0, 34),
-		BackgroundColor3 = accent,
-		Font = FONT_BOLD,
-		Text = "N",
-		TextColor3 = THEME.Text,
-		TextSize = 20,
-		Parent = topbar,
-	}, { corner(9) })
+	-- logo mark: custom image (opts.logo) or the default purple "N" tile
+	local logoSpec = resolveIcon(opts.logo)
+	if logoSpec then
+		local logoImg = Create("ImageLabel", {
+			Position = UDim2.new(0, 16, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			Size = UDim2.new(0, 40, 0, 40),
+			BackgroundTransparency = 1,
+			Parent = topbar,
+		})
+		applyIcon(logoImg, logoSpec)
+	else
+		local tile = Create("Frame", {
+			Position = UDim2.new(0, 18, 0.5, 0),
+			AnchorPoint = Vector2.new(0, 0.5),
+			Size = UDim2.new(0, 34, 0, 34),
+			BackgroundColor3 = accent,
+			Parent = topbar,
+		}, {
+			corner(10),
+			stroke(Color3.fromRGB(185, 155, 255), 1, 0.25),
+			Create("UIGradient", {
+				Rotation = 90,
+				Color = ColorSequence.new(Color3.fromRGB(168, 124, 255), Color3.fromRGB(118, 70, 234)),
+			}),
+		})
+		Create("TextLabel", {
+			Size = UDim2.new(1, 0, 1, 0),
+			BackgroundTransparency = 1,
+			Font = FONT_BOLD,
+			Text = "N",
+			TextColor3 = THEME.Text,
+			TextSize = 20,
+			Parent = tile,
+		})
+	end
 	Create("TextLabel", {
 		Position = UDim2.new(0, 62, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
@@ -2105,7 +2131,6 @@ function NEMESIS.Window(opts)
 			p.accentBar.Visible = on
 			p.label.TextColor3 = on and accent or THEME.SubText
 			if p.iconImg then p.iconImg.ImageColor3 = on and accent or THEME.SubText end
-			if p.dot then p.dot.Visible = on end
 			p.active = on
 		end
 	end
@@ -2234,18 +2259,6 @@ function NEMESIS.Window(opts)
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				Parent = row,
 			})
-			local dot
-			if popts.dot then
-				dot = Create("Frame", {
-					AnchorPoint = Vector2.new(1, 0.5),
-					Position = UDim2.new(1, -12, 0.5, 0),
-					Size = UDim2.new(0, 7, 0, 7),
-					BackgroundColor3 = accent,
-					Visible = false,
-					Parent = row,
-				}, { corner(4) })
-			end
-
 			local pageBody = Create("ScrollingFrame", {
 				Size = UDim2.new(1, 0, 1, 0),
 				BackgroundTransparency = 1,
@@ -2268,7 +2281,7 @@ function NEMESIS.Window(opts)
 				name = tostring(pname or "Page"),
 				group = groupName,
 				row = row, accentBar = accentBar, label = label, iconImg = hasIcon and iconImg or nil,
-				dot = dot, body = pageBody, active = false,
+				body = pageBody, active = false,
 			}
 			table.insert(tab.pages, page)
 
@@ -2440,9 +2453,13 @@ function NEMESIS.Window(opts)
 		minimized = m
 		if resizeGrip then resizeGrip.Visible = not m end
 		if m then
+			topbarFiller.Visible = false
+			topbarDivider.Visible = false
 			tween(root, { Size = UDim2.new(0, W, 0, TOPBAR_H) }, TI.OPEN)
 			setMinIcon("plus", "\u{002B}")
 		else
+			topbarFiller.Visible = true
+			topbarDivider.Visible = true
 			tween(root, { Size = UDim2.new(0, W, 0, H) }, TI.OPEN)
 			setMinIcon("minus", "\u{2013}")
 		end

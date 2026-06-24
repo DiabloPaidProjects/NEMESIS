@@ -11,6 +11,7 @@ local Win = NEMESIS.Window({
 	title = "NEMESIS",
 	accent = Color3.fromRGB(140, 90, 255),
 	game = "NEMESIS",
+	-- logo = 0,  -- ← put your uploaded Roblox image/decal ID here for the neon N logo
 	configs = { "HvH", "Legit", "Rage", "Default" },
 	toggleKey = Enum.KeyCode.RightShift,
 	onSave = function() NEMESIS.Notify({ title = "Config", content = "Saved current config", duration = 2 }) end,
@@ -24,7 +25,7 @@ local Combat = Win.Tab("Combat")
 
 -- AIMBOT group ------------------------------------------------------
 local Aimbot = Combat.Group("AIMBOT")
-local General = Aimbot.Page("General", { icon = "crosshair", dot = true })
+local General = Aimbot.Page("General", { icon = "crosshair" })
 local Targeting = Aimbot.Page("Targeting", { icon = "target" })
 local Accuracy = Aimbot.Page("Accuracy", { icon = "crosshair" })
 local AimAdvanced = Aimbot.Page("Advanced", { icon = "sliders-horizontal" })

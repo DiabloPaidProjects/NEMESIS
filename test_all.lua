@@ -30,7 +30,7 @@ local Elements = Win.Tab("Elements")
 local Basic = Elements.Group("BASICS")
 
 -- Page: Buttons & Toggles
-local BT = Basic.Page("Buttons", { icon = "mouse-pointer-click", dot = true })
+local BT = Basic.Page("Buttons", { icon = "mouse-pointer-click" })
 local s1 = BT.Section("BUTTONS & TOGGLES")
 s1.Button({ text = "Plain Button", button = "Run", callback = function() notify("Button", "Clicked!", 2) end })
 s1.Toggle({ text = "Toggle (off)", default = false, flag = "t_off",
