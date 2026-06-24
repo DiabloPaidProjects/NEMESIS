@@ -24,7 +24,7 @@ local Win = NEMESIS.Window({
 --====================================================================
 -- COMBAT
 --====================================================================
-local Combat = Win.Tab("Combat")
+local Combat = Win.Tab("Combat", "crosshair")
 
 -- AIMBOT group ------------------------------------------------------
 local Aimbot = Combat.Group("AIMBOT")
@@ -130,7 +130,7 @@ mcB.Slider({ text = "Walk Speed", min = 100, max = 400, default = 250, increment
 --====================================================================
 -- VISUALS
 --====================================================================
-local Visuals = Win.Tab("Visuals")
+local Visuals = Win.Tab("Visuals", "eye")
 local Esp = Visuals.Group("PLAYER ESP")
 local EspGeneral = Esp.Page("General", { icon = "eye" })
 local EspColors = Esp.Page("Colors", { icon = "palette" })
@@ -157,7 +157,7 @@ wvB.Slider({ text = "Night Mode", min = 0, max = 100, default = 0, increment = 1
 --====================================================================
 -- PLAYER / WORLD / CONFIG (stubbed so every top tab navigates)
 --====================================================================
-local Player = Win.Tab("Player")
+local Player = Win.Tab("Player", "user")
 local PlayerMain = Player.Group("PLAYER").Page("Movement", { icon = "person-standing" })
 local pmA = PlayerMain.Section("MOVEMENT")
 pmA.Slider({ text = "Walk Speed", min = 16, max = 500, default = 16, increment = 1, flag = "p_speed" })
@@ -165,14 +165,14 @@ pmA.Slider({ text = "Jump Power", min = 50, max = 500, default = 50, increment =
 local pmB = PlayerMain.Section("CLIP")
 pmB.Toggle({ text = "No Clip", default = false, flag = "p_noclip" })
 
-local World = Win.Tab("World")
+local World = Win.Tab("World", "globe")
 local WorldMain = World.Group("WORLD").Page("Environment", { icon = "globe" })
 local wmA = WorldMain.Section("TIME")
 wmA.Slider({ text = "Time of Day", min = 0, max = 24, default = 14, increment = 1, suffix = "h", flag = "wo_time" })
 local wmB = WorldMain.Section("WEATHER")
 wmB.Toggle({ text = "Remove Fog", default = false, flag = "wo_fog" })
 
-local Config = Win.Tab("Config")
+local Config = Win.Tab("Config", "settings")
 local ConfigMain = Config.Page("Settings", { icon = "settings" })
 local cs = ConfigMain.Section("INTERFACE")
 cs.Keybind({ text = "Menu Key", default = Enum.KeyCode.RightShift, mode = "Toggle", flag = "cfg_menukey" })

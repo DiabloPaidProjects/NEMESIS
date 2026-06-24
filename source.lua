@@ -1644,30 +1644,14 @@ function NEMESIS.Window(opts)
 	makeDraggable(root, topbar)
 
 	-- logo: the real NEMESIS brand image (downloaded + loaded via getcustomasset,
-	-- no Roblox upload). Falls back to a gradient "N" tile + wordmark on executors
-	-- without custom-asset support. opts.logo = <assetId> forces an uploaded image.
-	local wordmarkText = string.upper(tostring(opts.title or "NEMESIS"))
+	-- no Roblox upload). Falls back to a gradient "N" tile on executors without
+	-- custom-asset support. opts.logo = <assetId> forces an uploaded image.
 	local logoSpec = (opts.logo ~= nil) and resolveIcon(opts.logo) or nil
 	local brandAsset = (opts.logo == nil) and loadBrandLogo() or nil
 
-	local function wordmark(x)
-		return Create("TextLabel", {
-			Position = UDim2.new(0, x, 0.5, 0),
-			AnchorPoint = Vector2.new(0, 0.5),
-			Size = UDim2.new(0, 160, 1, 0),
-			BackgroundTransparency = 1,
-			Font = FONT_BOLD,
-			Text = wordmarkText,
-			TextColor3 = THEME.Text,
-			TextSize = 18,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = topbar,
-		})
-	end
-
 	local logoImage -- ImageLabel of the logo mark, if any (used by Win.SetLogoColor)
 	if brandAsset then
-		-- square N mark (grayscale, tinted by logoColor); wordmark beside it
+		-- square N mark (grayscale, tinted by logoColor)
 		logoImage = Create("ImageLabel", {
 			Position = UDim2.new(0, 14, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
@@ -1678,7 +1662,6 @@ function NEMESIS.Window(opts)
 			ScaleType = Enum.ScaleType.Fit,
 			Parent = topbar,
 		})
-		wordmark(64)
 	elseif logoSpec then
 		logoImage = Create("ImageLabel", {
 			Position = UDim2.new(0, 16, 0.5, 0),
@@ -1688,7 +1671,6 @@ function NEMESIS.Window(opts)
 			Parent = topbar,
 		})
 		applyIcon(logoImage, logoSpec)
-		wordmark(64)
 	else
 		local tile = Create("Frame", {
 			Position = UDim2.new(0, 18, 0.5, 0),
@@ -1713,13 +1695,12 @@ function NEMESIS.Window(opts)
 			TextSize = 20,
 			Parent = tile,
 		})
-		wordmark(62)
 	end
 
-	-- centered top-tab bar
+	-- top-tab pill bar (left-aligned, just after the logo)
 	local tabBar = Create("Frame", {
-		AnchorPoint = Vector2.new(0.5, 0.5),
-		Position = UDim2.new(0.5, 0, 0.5, 0),
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 66, 0.5, 0),
 		Size = UDim2.new(0, 0, 1, 0),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundTransparency = 1,
@@ -1727,9 +1708,9 @@ function NEMESIS.Window(opts)
 	}, {
 		Create("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
-			HorizontalAlignment = Enum.HorizontalAlignment.Center,
+			HorizontalAlignment = Enum.HorizontalAlignment.Left,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
-			Padding = UDim.new(0, 10),
+			Padding = UDim.new(0, 8),
 			SortOrder = Enum.SortOrder.LayoutOrder,
 		}),
 	})
@@ -2240,12 +2221,22 @@ function NEMESIS.Window(opts)
 		runSearch(searchBox.Text)
 	end
 
+	-- paint a top-tab pill for its active/inactive state (smoothly when animate)
+	local function paintTab(tab, active, animate)
+		local info = animate and TI.FAST or TweenInfo.new(0)
+		tween(tab.button, {
+			BackgroundColor3 = active and accent or THEME.Element,
+			BackgroundTransparency = active and 0 or 0.4,
+		}, info)
+		if tab.icon then tween(tab.icon, { ImageColor3 = active and THEME.Text or THEME.SubText }, info) end
+		tween(tab.label, { TextColor3 = active and THEME.Text or THEME.SubText }, info)
+	end
+
 	local function showTab(tab)
 		activeTab = tab
 		for _, t in ipairs(tabs) do
 			t.sidebarFrame.Visible = (t == tab)
-			t.button.TextColor3 = (t == tab) and accent or THEME.SubText
-			t.underline.Visible = (t == tab)
+			paintTab(t, t == tab, true)
 			for _, p in ipairs(t.pages) do p.body.Visible = false end
 		end
 		local pg = tab.activePage or tab.pages[1]
@@ -2259,11 +2250,41 @@ function NEMESIS.Window(opts)
 	--------------------------------------------------------------------
 	-- Tab / Group / Page builders
 	--------------------------------------------------------------------
-	function Win.Tab(name)
+	function Win.Tab(name, icon)
 		local tab = { name = tostring(name or "Tab"), pages = {}, activePage = nil }
 
-		-- top-tab button + underline
+		-- top-tab pill: icon + label, filled accent when active
 		local btn = Create("TextButton", {
+			Size = UDim2.new(0, 0, 0, 38),
+			AutomaticSize = Enum.AutomaticSize.X,
+			BackgroundColor3 = THEME.Element,
+			BackgroundTransparency = 0.4,
+			AutoButtonColor = false,
+			Text = "",
+			Parent = tabBar,
+		}, {
+			corner(12),
+			Create("UIListLayout", {
+				FillDirection = Enum.FillDirection.Horizontal,
+				VerticalAlignment = Enum.VerticalAlignment.Center,
+				Padding = UDim.new(0, 7),
+				SortOrder = Enum.SortOrder.LayoutOrder,
+			}),
+			Create("UIPadding", { PaddingLeft = UDim.new(0, 15), PaddingRight = UDim.new(0, 16) }),
+		})
+		local iconImg
+		local iSpec = resolveIcon(icon)
+		if iSpec then
+			iconImg = Create("ImageLabel", {
+				Size = UDim2.new(0, 18, 0, 18),
+				BackgroundTransparency = 1,
+				ImageColor3 = THEME.SubText,
+				LayoutOrder = 1,
+				Parent = btn,
+			})
+			applyIcon(iconImg, iSpec)
+		end
+		local label = Create("TextLabel", {
 			Size = UDim2.new(0, 0, 1, 0),
 			AutomaticSize = Enum.AutomaticSize.X,
 			BackgroundTransparency = 1,
@@ -2271,27 +2292,20 @@ function NEMESIS.Window(opts)
 			Text = tostring(name or "Tab"),
 			TextColor3 = THEME.SubText,
 			TextSize = 15,
-			AutoButtonColor = false,
-			Parent = tabBar,
-		}, { padXY(6, 0) })
-		local underline = Create("Frame", {
-			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.new(0.5, 0, 1, -8),
-			Size = UDim2.new(1, -6, 0, 2),
-			BackgroundColor3 = accent,
-			BorderSizePixel = 0,
-			Visible = false,
+			LayoutOrder = 2,
 			Parent = btn,
-		}, { corner(1) })
+		})
 		tab.button = btn
-		tab.underline = underline
+		tab.icon = iconImg
+		tab.label = label
 		btn.MouseEnter:Connect(function()
-			if activeTab ~= tab then tween(btn, { TextColor3 = THEME.Text }, TI.HOVER) end
+			if activeTab ~= tab then tween(btn, { BackgroundTransparency = 0.12 }, TI.HOVER) end
 		end)
 		btn.MouseLeave:Connect(function()
-			if activeTab ~= tab then tween(btn, { TextColor3 = THEME.SubText }, TI.HOVER) end
+			if activeTab ~= tab then tween(btn, { BackgroundTransparency = 0.4 }, TI.HOVER) end
 		end)
 		btn.MouseButton1Click:Connect(function() showTab(tab) end)
+		paintTab(tab, false, false)
 
 		-- this tab's sidebar column
 		tab.sidebarFrame = Create("Frame", {

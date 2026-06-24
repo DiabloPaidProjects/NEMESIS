@@ -26,7 +26,7 @@ local Win = NEMESIS.Window({
 --====================================================================
 -- TAB 1 — Elements (one Group, several Pages, every control)
 --====================================================================
-local Elements = Win.Tab("Elements")
+local Elements = Win.Tab("Elements", "layout-grid")
 local Basic = Elements.Group("BASICS")
 
 -- Page: Buttons & Toggles
@@ -84,7 +84,7 @@ s6.Label("Standalone pages render below the groups, just like the mockup's Backt
 --====================================================================
 -- TAB 2 — Control (programmatic Set/Get)
 --====================================================================
-local ControlTab = Win.Tab("Control")
+local ControlTab = Win.Tab("Control", "sliders-horizontal")
 local Live = ControlTab.Page("Live", { icon = "settings-2" })
 local s7 = Live.Section("DRIVEN BY BUTTONS")
 local liveToggle = s7.Toggle({ text = "Controlled toggle", default = false, flag = "ctl_toggle" })
@@ -105,7 +105,7 @@ end })
 --====================================================================
 -- TAB 3 — Layout (two groups so sidebar grouping + dividers show)
 --====================================================================
-local Layout = Win.Tab("Layout")
+local Layout = Win.Tab("Layout", "columns-2")
 local Combat = Layout.Group("COMBAT")
 local CombatMain = Combat.Page("Aimbot", { icon = "crosshair" })
 local cm = CombatMain.Section("AIMBOT")

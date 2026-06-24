@@ -72,12 +72,12 @@ The API is **dot-style** — call methods with `.` (not `:`). Option tables use 
 
 Returns `Win` with: `Win.Tab(name)`, `Win.Toggle(force?)` (minimize/restore), `Win.SetLogoColor(color)` (recolor the N logo to any hue), `Win.Destroy()`, `Win.Notify(...)`, `Win.Instance`. The top bar has search + minimize + close; the menu drags by its top bar and resizes from the dotted bottom-right grip.
 
-### `Win.Tab(name)` → `Tab`
+### `Win.Tab(name, icon?)` → `Tab`
 
-Adds a **top-bar tab** (and its own sidebar) and returns a `Tab`. The first tab created is shown by default.
+Adds a **top-bar tab** (an icon + label pill — solid accent when active, dark when not, with a smooth fill animation on switch) and its own sidebar. The first tab created is shown by default. `icon` is a Lucide name / asset ID.
 
 ```lua
-local Combat = Win.Tab("Combat")
+local Combat = Win.Tab("Combat", "crosshair")
 
 Combat.Group("AIMBOT")              -- sidebar group header → has .Page(...)
 Combat.Page("Misc", { icon = "x" }) -- standalone sidebar item (no group header)

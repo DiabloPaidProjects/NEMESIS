@@ -38,9 +38,9 @@ check(type(Win.Tab) == "function", "Win.Tab exists")
 check(type(Win.Toggle) == "function", "Win.Toggle (minimize) exists")
 check(type(Win.Destroy) == "function", "Win.Destroy exists")
 
--- top tabs
-local Combat = Win.Tab("Combat")
-local Visuals = Win.Tab("Visuals")
+-- top tabs (with pill icons)
+local Combat = Win.Tab("Combat", "crosshair")
+local Visuals = Win.Tab("Visuals", "eye")
 check(type(Combat) == "table" and type(Combat.Group) == "function", "Tab.Group exists")
 check(type(Combat.Page) == "function", "Tab.Page exists")
 
