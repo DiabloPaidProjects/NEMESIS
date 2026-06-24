@@ -2163,24 +2163,26 @@ function NEMESIS.Window(opts)
 		Parent = content,
 	})
 	-- top/bottom fade overlays: content gently fades into the background at the
-	-- scroll edges (background-colored gradient, sitting above the page content)
-	local FADE_H = 26
+	-- scroll edges (background-colored gradient, sitting above the page content).
+	-- The bottom fade is taller and rounded so it also restores the window's
+	-- rounded bottom-right corner (it would otherwise square it off).
+	local TOP_FADE_H, BOT_FADE_H = 28, 58
 	Create("Frame", {
-		Size = UDim2.new(1, 0, 0, FADE_H),
+		Size = UDim2.new(1, 0, 0, TOP_FADE_H),
 		BackgroundColor3 = THEME.Background,
 		BorderSizePixel = 0,
-		ZIndex = 6,
+		ZIndex = 5,
 		Parent = pagesHost,
 	}, { Create("UIGradient", { Rotation = 90, Transparency = numSeq(0, 1) }) })
 	Create("Frame", {
 		AnchorPoint = Vector2.new(0, 1),
 		Position = UDim2.new(0, 0, 1, 0),
-		Size = UDim2.new(1, 0, 0, FADE_H),
+		Size = UDim2.new(1, 0, 0, BOT_FADE_H),
 		BackgroundColor3 = THEME.Background,
 		BorderSizePixel = 0,
-		ZIndex = 6,
+		ZIndex = 5,
 		Parent = pagesHost,
-	}, { Create("UIGradient", { Rotation = 90, Transparency = numSeq(1, 0) }) })
+	}, { corner(RADIUS), Create("UIGradient", { Rotation = 90, Transparency = numSeq(1, 0) }) })
 
 	-- open animation
 	root.Size = UDim2.new(0, W, 0, 0)
