@@ -5,7 +5,8 @@
 	RightShift hides/shows, Ctrl+K focuses search, drag the grip to resize.
 ]]
 
-local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua"))()
+-- ?_=os.time() busts GitHub's CDN / executor HTTP cache so you always get the latest
+local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua?_=" .. tostring(os.time())))()
 
 local function notify(t, c, d)
 	NEMESIS.Notify({ title = t, content = c, duration = d or 3 })

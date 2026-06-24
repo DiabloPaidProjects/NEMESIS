@@ -6,7 +6,8 @@
 	drag the dotted bottom-right grip to resize.
 ]]
 
-local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua"))()
+-- ?_=os.time() busts GitHub's CDN / executor HTTP cache so you always get the latest
+local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua?_=" .. tostring(os.time())))()
 
 local Win = NEMESIS.Window({
 	title = "NEMESIS",
