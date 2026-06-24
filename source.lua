@@ -2463,24 +2463,25 @@ function NEMESIS.Window(opts)
 		local Tab = {}
 		function Tab.Group(gname)
 			groupCount = groupCount + 1
+			local first = groupCount == 1
 			local gh = Create("Frame", {
-				Size = UDim2.new(1, 0, 0, groupCount > 1 and 34 or 24),
+				Size = UDim2.new(1, 0, 0, first and 26 or 50),
 				BackgroundTransparency = 1,
 				Parent = tab.sidebarFrame,
 			})
-			if groupCount > 1 then
-				Create("Frame", {
-					Position = UDim2.new(0, 12, 0, 6),
+			if not first then
+				Create("Frame", { -- divider line between sidebar groups
+					Position = UDim2.new(0, 12, 0, 18),
 					Size = UDim2.new(1, -24, 0, 1),
 					BackgroundColor3 = THEME.Stroke,
-					BackgroundTransparency = 0.4,
+					BackgroundTransparency = 0.2,
 					BorderSizePixel = 0,
 					Parent = gh,
 				})
 			end
 			Create("TextLabel", {
 				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.new(0, 14, 1, -3),
+				Position = UDim2.new(0, 14, 1, -2),
 				Size = UDim2.new(1, -24, 0, 14),
 				BackgroundTransparency = 1,
 				Font = FONT_BOLD,
