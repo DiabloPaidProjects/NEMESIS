@@ -610,19 +610,8 @@ end
 ----------------------------------------------------------------------
 -- Inline row scaffold (label on the left, control on the right)
 ----------------------------------------------------------------------
--- Rows live inside a Section's body. A hairline separator is inserted above
--- every row except the first (tracked via the body's "hasRow" attribute).
+-- Rows live inside a Section's body, separated by spacing only (no divider lines).
 local function newRow(parent, height)
-	if parent:GetAttribute("hasRow") then
-		Create("Frame", {
-			Size = UDim2.new(1, -ROW_PAD * 2, 0, 1),
-			BackgroundColor3 = THEME.RowDivider,
-			BackgroundTransparency = 0.35,
-			BorderSizePixel = 0,
-			Parent = parent,
-		})
-	end
-	parent:SetAttribute("hasRow", true)
 	return Create("Frame", {
 		BackgroundColor3 = THEME.Group,
 		BackgroundTransparency = 1,
@@ -1550,17 +1539,6 @@ local function makeSection(host, accent, title)
 				Parent = header,
 			})
 		end
-		-- header divider
-		Create("Frame", {
-			AnchorPoint = Vector2.new(0.5, 1),
-			Position = UDim2.new(0.5, 0, 1, 0),
-			Size = UDim2.new(1, -ROW_PAD * 2, 0, 1),
-			BackgroundColor3 = THEME.RowDivider,
-			BackgroundTransparency = 0.3,
-			BorderSizePixel = 0,
-			Parent = header,
-		})
-
 		local open = true
 		header.MouseButton1Click:Connect(function()
 			open = not open
