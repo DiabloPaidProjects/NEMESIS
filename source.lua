@@ -106,8 +106,9 @@ end
 ----------------------------------------------------------------------
 -- versioned path: bump the filename (URL + on-disk cache) whenever the logo
 -- changes, so neither the GitHub CDN nor the executor serves a stale image
-local LOGO_URL = "https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/assets/nemesis_logo_v3.png"
-local LOGO_FILE = "nemesis_logo_v3.png"
+-- grayscale logo so ImageColor3 can tint it to any hue at runtime
+local LOGO_URL = "https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/assets/nemesis_logo_v4.png"
+local LOGO_FILE = "nemesis_logo_v4.png"
 local brandLogoCache = nil -- nil = untried, false = failed, string = rbxasset id
 
 local function customAssetFn()
@@ -1585,6 +1586,7 @@ function NEMESIS.Window(opts)
 	opts = opts or {}
 	local accent = opts.accent or THEME.Accent
 	local accentHex = hexOf(accent)
+	local logoColor = opts.logoColor or Color3.fromRGB(255, 45, 45) -- tint for the built-in N logo
 	ensureRoot()
 
 	local scale = computeScale()
@@ -1660,27 +1662,29 @@ function NEMESIS.Window(opts)
 		})
 	end
 
+	local logoImage -- ImageLabel of the logo mark, if any (used by Win.SetLogoColor)
 	if brandAsset then
-		-- square N mark (the wordmark is drawn as text beside it)
-		Create("ImageLabel", {
+		-- square N mark (grayscale, tinted by logoColor); wordmark beside it
+		logoImage = Create("ImageLabel", {
 			Position = UDim2.new(0, 14, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
 			Size = UDim2.new(0, 42, 0, 42),
 			BackgroundTransparency = 1,
 			Image = brandAsset,
+			ImageColor3 = logoColor,
 			ScaleType = Enum.ScaleType.Fit,
 			Parent = topbar,
 		})
 		wordmark(64)
 	elseif logoSpec then
-		local logoImg = Create("ImageLabel", {
+		logoImage = Create("ImageLabel", {
 			Position = UDim2.new(0, 16, 0.5, 0),
 			AnchorPoint = Vector2.new(0, 0.5),
 			Size = UDim2.new(0, 40, 0, 40),
 			BackgroundTransparency = 1,
 			Parent = topbar,
 		})
-		applyIcon(logoImg, logoSpec)
+		applyIcon(logoImage, logoSpec)
 		wordmark(64)
 	else
 		local tile = Create("Frame", {
@@ -2579,6 +2583,12 @@ function NEMESIS.Window(opts)
 		}, { corner(22), stroke(THEME.Stroke, 1, 0.4) })
 		makeDraggable(fab, fab)
 		fab.MouseButton1Click:Connect(function() setHidden(not hidden) end)
+	end
+
+	-- recolor the logo at runtime (any hue): Win.SetLogoColor(Color3.fromRGB(...))
+	function Win.SetLogoColor(c)
+		logoColor = c or logoColor
+		if logoImage then logoImage.ImageColor3 = logoColor end
 	end
 
 	Win.Instance = root

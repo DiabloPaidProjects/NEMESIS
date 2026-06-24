@@ -11,7 +11,8 @@ local Win = NEMESIS.Window({
 	title = "NEMESIS",
 	accent = Color3.fromRGB(140, 90, 255),
 	game = "NEMESIS",
-	-- logo = 0,  -- ← put your uploaded Roblox image/decal ID here for the neon N logo
+	logoColor = Color3.fromRGB(255, 45, 45), -- recolor the N logo to any hue (default red)
+	-- logo = 0,  -- ← optional: your own uploaded Roblox image/decal ID overrides the built-in N
 	configs = { "HvH", "Legit", "Rage", "Default" },
 	toggleKey = Enum.KeyCode.RightShift,
 	onSave = function() NEMESIS.Notify({ title = "Config", content = "Saved current config", duration = 2 }) end,
@@ -159,6 +160,18 @@ local ConfigMain = Config.Page("Settings", { icon = "settings" })
 local cs = ConfigMain.Section("INTERFACE")
 cs.Keybind({ text = "Menu Key", default = Enum.KeyCode.RightShift, mode = "Toggle", flag = "cfg_menukey" })
 cs.ColorPicker({ text = "Accent", default = Color3.fromRGB(140, 90, 255), transparency = 0, flag = "cfg_accent" })
+cs.ColorPicker({ text = "Logo Color", default = Color3.fromRGB(255, 45, 45), transparency = 0, flag = "cfg_logo",
+	callback = function(color) Win.SetLogoColor(color) end })
+cs.Dropdown({ text = "Logo Preset", options = { "Red", "Purple", "Pink", "Green", "Yellow", "Cyan", "White" }, default = "Red", flag = "cfg_logo_preset",
+	callback = function(v)
+		local map = {
+			Red = Color3.fromRGB(255, 45, 45), Purple = Color3.fromRGB(180, 90, 255),
+			Pink = Color3.fromRGB(255, 90, 200), Green = Color3.fromRGB(90, 255, 120),
+			Yellow = Color3.fromRGB(255, 210, 40), Cyan = Color3.fromRGB(60, 220, 255),
+			White = Color3.fromRGB(245, 245, 250),
+		}
+		Win.SetLogoColor(map[v])
+	end })
 cs.Input({ text = "Config Name", placeholder = "my-config", flag = "cfg_name" })
 cs.Button({ text = "Save Config", button = "Save", callback = function()
 	NEMESIS.Notify({ title = "Config", content = "Saved", duration = 2 })

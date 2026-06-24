@@ -56,7 +56,8 @@ The API is **dot-style** — call methods with `.` (not `:`). Option tables use 
 | Option | Type | Default | Description |
 |---|---|---|---|
 | `title` | string | `"NEMESIS"` | Wordmark next to the logo. |
-| `logo` | number \| string? | — | Override the logo with your own Roblox image/decal ID. By default the real **NEMESIS** brand image auto-loads (downloaded + shown via `getcustomasset`, no upload); on executors without custom-asset support it falls back to a gradient "N" tile. |
+| `logo` | number \| string? | — | Override the logo with your own Roblox image/decal ID. By default the **NEMESIS** N mark auto-loads (downloaded + shown via `getcustomasset`, no upload); on executors without custom-asset support it falls back to a gradient "N" tile. |
+| `logoColor` | Color3? | red | Tints the built-in N logo any hue (purple, pink, green, yellow, …). Change it live with `Win.SetLogoColor(color)`. |
 | `accent` | Color3? | purple | Accent for highlights, toggles, sliders, underline. |
 | `game` | string? | `"Game"` | Footer game name (next to the green status dot). |
 | `status` | string? | `"Connected"` | Footer status line under the game name. |
@@ -68,7 +69,7 @@ The API is **dot-style** — call methods with `.` (not `:`). Option tables use 
 | `onConfig` | function(name)? | — | Fired when the config dropdown changes. |
 | `onMenu` / `onFolder` | function? | — | Fired by the 3-dot / folder buttons. |
 
-Returns `Win` with: `Win.Tab(name)`, `Win.Toggle(force?)` (minimize/restore), `Win.Destroy()`, `Win.Notify(...)`, `Win.Instance`. The top bar has search + minimize + close; the menu drags by its top bar and resizes from the dotted bottom-right grip.
+Returns `Win` with: `Win.Tab(name)`, `Win.Toggle(force?)` (minimize/restore), `Win.SetLogoColor(color)` (recolor the N logo to any hue), `Win.Destroy()`, `Win.Notify(...)`, `Win.Instance`. The top bar has search + minimize + close; the menu drags by its top bar and resizes from the dotted bottom-right grip.
 
 ### `Win.Tab(name)` → `Tab`
 
