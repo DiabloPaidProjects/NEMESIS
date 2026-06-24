@@ -1,6 +1,6 @@
 # NEMESIS
 
-A **desktop cheat-menu** Roblox/Luau UI library for script executors — horizontal top tabs, a grouped left sidebar of sub-tabs, collapsible content sections with inline rows, a breadcrumb + config bar, a full color picker, live FPS footer, smooth tweened transitions, and broad executor compatibility. Inspired by neverlose, gamesense, and onetap layouts.
+A **desktop cheat-menu** Roblox/Luau UI library for script executors — a centered segmented top tab bar, a grouped left sidebar with collapsible groups, collapsible content sections with inline rows, a breadcrumb header, a full color picker, smooth tweened transitions, and broad executor compatibility. Inspired by neverlose, gamesense, and onetap layouts.
 
 ```lua
 local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua"))()
@@ -13,11 +13,10 @@ local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/Diabl
 
 ## Features
 
-- 🧭 **Two-level navigation** — a horizontal **top tab bar** (Combat / Visuals / …) plus a **grouped left sidebar** of sub-tabs (group headers + pages + standalone items, with an active highlight, accent bar, and optional dot).
+- 🧭 **Two-level navigation** — a centered **segmented top tab bar** (active = highlight + accent underline, smooth switch) plus a **grouped left sidebar** of sub-tabs with **boxed, collapsible group headers** and an active highlight.
 - 🗂️ **Collapsible sections** — `Page.Section("GENERAL")` cards whose header chevron collapses the rows.
-- ↔️ **Inline rows** — label on the left, control on the right, hairline separators between rows (the classic cheat-menu layout).
-- 🧭 **Breadcrumb + config bar** — auto `Tab › Group › Page` breadcrumb, a config dropdown, a save button, and a 3-dot menu in the content header.
-- 📊 **Status footer** — game name, connection state, live FPS, and folder/save config buttons.
+- ↔️ **Inline rows** — label on the left, control on the right (the classic cheat-menu layout).
+- 🧭 **Breadcrumb** — auto `Tab › Group › Page` breadcrumb in the content header.
 - 🎨 **Full color picker** — pop-out panel: saturation/value square, hue slider, alpha slider, editable HEX + percentage.
 - 🖼️ **Icons** — Lucide names (`icon = "crosshair"`) or raw asset IDs.
 - 🔎 **Search** — top-bar search filters the active page (Ctrl+K to focus).
@@ -59,33 +58,27 @@ The API is **dot-style** — call methods with `.` (not `:`). Option tables use 
 | `logo` | number \| string? | — | Override the logo with your own Roblox image/decal ID. By default the **NEMESIS** N mark auto-loads (downloaded + shown via `getcustomasset`, no upload); on executors without custom-asset support it falls back to a gradient "N" tile. |
 | `logoColor` | Color3? | red | Tints the built-in N logo any hue (purple, pink, green, yellow, …). Change it live with `Win.SetLogoColor(color)`. |
 | `columns` | number? | 2 (1 mobile) | Default number of panel columns per page (1–3). Pages lay their Sections out as a one-pager grid; override per page or per section (below). |
-| `accent` | Color3? | purple | Accent for highlights, toggles, sliders, underline. |
-| `game` | string? | `"Game"` | Footer game name (next to the green status dot). |
-| `status` | string? | `"Connected"` | Footer status line under the game name. |
-| `configs` | string[]? | `{ "Default" }` | Options for the content-header config dropdown. |
+| `accent` | Color3? | purple | Accent for highlights, toggles, sliders, the tab underline. |
 | `toggleKey` | KeyCode? | `RightShift` | Key to hide/show the window. |
 | `width` | number? | `960` (desktop) | Window width (px, before scaling). |
 | `height` | number? | `640` (desktop) | Window height (px, before scaling). |
-| `onSave` | function? | — | Fired by the save buttons (else a "Saved" toast). |
-| `onConfig` | function(name)? | — | Fired when the config dropdown changes. |
-| `onMenu` / `onFolder` | function? | — | Fired by the 3-dot / folder buttons. |
 
 Returns `Win` with: `Win.Tab(name)`, `Win.Toggle(force?)` (minimize/restore), `Win.SetLogoColor(color)` (recolor the N logo to any hue), `Win.Destroy()`, `Win.Notify(...)`, `Win.Instance`. The top bar has search + minimize + close; the menu drags by its top bar and resizes from the dotted bottom-right grip.
 
-### `Win.Tab(name, icon?)` → `Tab`
+### `Win.Tab(name)` → `Tab`
 
-Adds a **top-bar tab** (an icon + label pill — solid accent when active, dark when not, with a smooth fill animation on switch) and its own sidebar. The first tab created is shown by default. `icon` is a Lucide name / asset ID.
+Adds a tab to the centered **segmented top bar** (active = subtle highlight + accent underline, smooth on switch) and its own sidebar. The first tab created is shown by default.
 
 ```lua
-local Combat = Win.Tab("Combat", "crosshair")
+local Combat = Win.Tab("Combat")
 
-Combat.Group("AIMBOT")              -- sidebar group header → has .Page(...)
+Combat.Group("AIMBOT")              -- boxed, collapsible sidebar group → has .Page(...)
 Combat.Page("Misc", { icon = "x" }) -- standalone sidebar item (no group header)
 ```
 
 | `Tab` method | Returns | Description |
 |---|---|---|
-| `Tab.Group(name)` | `Group` | A sidebar section header (purple uppercase). Subsequent groups get a divider above them. |
+| `Tab.Group(name)` | `Group` | A **boxed, collapsible** sidebar group header (purple uppercase + chevron); click it to expand/collapse its pages. |
 | `Tab.Page(name, opts?)` | `Page` | A **standalone** sidebar sub-tab (rendered below the groups). |
 
 ### `Group.Page(name, opts?)` → `Page`

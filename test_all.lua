@@ -15,13 +15,8 @@ end
 local Win = NEMESIS.Window({
 	title = "NEMESIS",
 	accent = Color3.fromRGB(140, 90, 255),
-	game = "NEMESIS",
-	configs = { "HvH", "Legit", "Rage", "Default" },
+	logoColor = Color3.fromRGB(255, 45, 45),
 	toggleKey = Enum.KeyCode.RightShift,
-	onSave = function() notify("Config", "onSave fired", 2) end,
-	onConfig = function(name) notify("Config", "switched to " .. name, 2) end,
-	onMenu = function() notify("Menu", "3-dot menu", 2) end,
-	onFolder = function() notify("Configs", "folder button", 2) end,
 })
 
 --====================================================================

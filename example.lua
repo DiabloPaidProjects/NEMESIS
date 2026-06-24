@@ -12,14 +12,10 @@ local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/Diabl
 local Win = NEMESIS.Window({
 	title = "NEMESIS",
 	accent = Color3.fromRGB(140, 90, 255),
-	game = "NEMESIS",
 	logoColor = Color3.fromRGB(255, 45, 45), -- recolor the N logo to any hue (default red)
 	columns = 2,                              -- panels per page (default 2 desktop / 1 mobile)
 	-- logo = 0,  -- ← optional: your own uploaded Roblox image/decal ID overrides the built-in N
-	configs = { "HvH", "Legit", "Rage", "Default" },
 	toggleKey = Enum.KeyCode.RightShift,
-	onSave = function() NEMESIS.Notify({ title = "Config", content = "Saved current config", duration = 2 }) end,
-	onConfig = function(name) NEMESIS.Notify({ title = "Config", content = "Loaded: " .. name, duration = 2 }) end,
 })
 
 --====================================================================

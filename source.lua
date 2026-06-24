@@ -6,17 +6,17 @@
 		local NEMESIS = loadstring(game:HttpGet("https://raw.githubusercontent.com/DiabloPaidProjects/NEMESIS/main/source.lua"))()
 
 	v2.0 redesign (desktop-first; still scales down on touch):
-		- Horizontal top tab bar (Combat / Visuals / …) with an accent underline
-		- Grouped left sidebar of sub-tabs (group headers + pages + standalone items)
-		- Breadcrumb + config bar (config dropdown, save, 3-dot) in the content header
+		- Centered segmented top tab bar (active = highlight + accent underline, smooth)
+		- Grouped left sidebar of sub-tabs with boxed, collapsible group headers
+		- Breadcrumb in the content header
 		- Collapsible content Sections holding inline rows (label left / control right)
-		- Status footer (game name, connection state, live FPS) + config icon buttons
+		- One-pager column grid for panels; recolorable brand logo
 
 	API (dot-style, hierarchy Window -> Tab -> Group -> Page -> Section -> controls):
-		local Win     = NEMESIS.Window({ title = "NEMESIS", game = "CS2" })
+		local Win     = NEMESIS.Window({ title = "NEMESIS" })
 		local Combat  = Win.Tab("Combat")
 		local Aimbot  = Combat.Group("AIMBOT")
-		local General = Aimbot.Page("General", { icon = "crosshair", dot = true })
+		local General = Aimbot.Page("General", { icon = "crosshair" })
 		local Misc    = Combat.Page("Misc", { icon = "sliders-horizontal" })  -- standalone
 		local gen     = General.Section("GENERAL")
 		gen.Toggle({ text = "Enable", default = true, flag = "aim_enable" })
@@ -1632,15 +1632,6 @@ function NEMESIS.Window(opts)
 		BorderSizePixel = 0,
 		Parent = topbar,
 	})
-	local topbarDivider = Create("Frame", {
-		Position = UDim2.new(0, 0, 1, -1),
-		Size = UDim2.new(1, 0, 0, 1),
-		BackgroundColor3 = THEME.Stroke,
-		BackgroundTransparency = 0.4,
-		BorderSizePixel = 0,
-		ZIndex = 2,
-		Parent = topbar,
-	})
 	makeDraggable(root, topbar)
 
 	-- logo: the real NEMESIS brand image (downloaded + loaded via getcustomasset,
@@ -1697,21 +1688,54 @@ function NEMESIS.Window(opts)
 		})
 	end
 
-	-- top-tab pill bar (left-aligned, just after the logo)
-	local tabBar = Create("Frame", {
+	-- NEMESIS wordmark beside the logo
+	Create("TextLabel", {
+		Position = UDim2.new(0, 64, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 66, 0.5, 0),
-		Size = UDim2.new(0, 0, 1, 0),
-		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.new(0, 140, 1, 0),
+		BackgroundTransparency = 1,
+		Font = FONT_BOLD,
+		Text = string.upper(tostring(opts.title or "NEMESIS")),
+		TextColor3 = THEME.Text,
+		TextSize = 18,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = topbar,
+	})
+
+	-- centering frame between the logo and the search pill
+	local tabArea = Create("Frame", {
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = UDim2.new(0, 196, 0.5, 0),
+		Size = UDim2.new(1, -(196 + 324), 1, 0),
 		BackgroundTransparency = 1,
 		Parent = topbar,
 	}, {
 		Create("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
-			HorizontalAlignment = Enum.HorizontalAlignment.Left,
+			HorizontalAlignment = Enum.HorizontalAlignment.Center,
 			VerticalAlignment = Enum.VerticalAlignment.Center,
-			Padding = UDim.new(0, 8),
 			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+	})
+	-- segmented tab container (one rounded bordered bar holding all tabs)
+	local tabBar = Create("Frame", {
+		Size = UDim2.new(0, 0, 0, 44),
+		AutomaticSize = Enum.AutomaticSize.X,
+		BackgroundColor3 = THEME.Element,
+		BackgroundTransparency = 0.35,
+		Parent = tabArea,
+	}, {
+		corner(12),
+		stroke(THEME.Stroke, 1, 0.3),
+		Create("UIListLayout", {
+			FillDirection = Enum.FillDirection.Horizontal,
+			VerticalAlignment = Enum.VerticalAlignment.Center,
+			Padding = UDim.new(0, 2),
+			SortOrder = Enum.SortOrder.LayoutOrder,
+		}),
+		Create("UIPadding", {
+			PaddingLeft = UDim.new(0, 4), PaddingRight = UDim.new(0, 4),
+			PaddingTop = UDim.new(0, 4), PaddingBottom = UDim.new(0, 4),
 		}),
 	})
 
@@ -1870,7 +1894,7 @@ function NEMESIS.Window(opts)
 
 	-- scroll region (tab sidebars stack here, one visible at a time)
 	local sidebarScroll = Create("ScrollingFrame", {
-		Size = UDim2.new(1, 0, 1, -FOOTER_H),
+		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ScrollBarThickness = 0,
@@ -1879,98 +1903,6 @@ function NEMESIS.Window(opts)
 		ZIndex = 2,
 		Parent = sidebarBG,
 	}, { padXY(12, 12) })
-
-	-- sidebar footer (config buttons + status)
-	local footer = Create("Frame", {
-		AnchorPoint = Vector2.new(0, 1),
-		Position = UDim2.new(0, 0, 1, 0),
-		Size = UDim2.new(1, 0, 0, FOOTER_H),
-		BackgroundTransparency = 1,
-		ZIndex = 2,
-		Parent = sidebarBG,
-	}, { padXY(14, 0) })
-	Create("Frame", {
-		Position = UDim2.new(0, 14, 0, 0),
-		Size = UDim2.new(1, -28, 0, 1),
-		BackgroundColor3 = THEME.Stroke,
-		BackgroundTransparency = 0.4,
-		BorderSizePixel = 0,
-		Parent = footer,
-	})
-	-- config icon buttons (folder, save)
-	local cfgRow = Create("Frame", {
-		Position = UDim2.new(0, 0, 0, 14),
-		Size = UDim2.new(1, 0, 0, 36),
-		BackgroundTransparency = 1,
-		Parent = footer,
-	}, {
-		Create("UIListLayout", {
-			FillDirection = Enum.FillDirection.Horizontal,
-			Padding = UDim.new(0, 8),
-			SortOrder = Enum.SortOrder.LayoutOrder,
-		}),
-	})
-	local folderBtn = iconButton(cfgRow, "folder", "\u{1F4C1}", 36, { bg = THEME.Element, iconSize = 17 })
-	local saveBtnFooter = iconButton(cfgRow, "save", "\u{1F4BE}", 36, { bg = THEME.Element, iconSize = 17 })
-	folderBtn.MouseButton1Click:Connect(function()
-		if type(opts.onFolder) == "function" then pcall(opts.onFolder)
-		else NEMESIS.Notify({ title = "Configs", content = "Config folder", duration = 2 }) end
-	end)
-	saveBtnFooter.MouseButton1Click:Connect(function()
-		if type(opts.onSave) == "function" then pcall(opts.onSave)
-		else NEMESIS.Notify({ title = "Config", content = "Saved", duration = 2 }) end
-	end)
-
-	-- status row: dot + name (+ optional sub-line) ........ FPS
-	local statusName = opts.game or opts.title or "NEMESIS"
-	local statusSub = opts.status
-	local hasSub = statusSub ~= nil and tostring(statusSub) ~= ""
-	local rowMid = hasSub and -22 or -20
-
-	local statusDot = Create("Frame", {
-		AnchorPoint = Vector2.new(0, 0.5),
-		Position = UDim2.new(0, 2, 1, rowMid),
-		Size = UDim2.new(0, 9, 0, 9),
-		BackgroundColor3 = THEME.Good,
-		Parent = footer,
-	}, { corner(5) })
-	Create("TextLabel", {
-		AnchorPoint = Vector2.new(0, hasSub and 0 or 0.5),
-		Position = UDim2.new(0, 18, 1, hasSub and -34 or rowMid),
-		Size = UDim2.new(1, -70, 0, 16),
-		BackgroundTransparency = 1,
-		Font = FONT_BOLD,
-		Text = tostring(statusName),
-		TextColor3 = THEME.Text,
-		TextSize = 14,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = footer,
-	})
-	if hasSub then
-		Create("TextLabel", {
-			Position = UDim2.new(0, 18, 1, -18),
-			Size = UDim2.new(1, -70, 0, 14),
-			BackgroundTransparency = 1,
-			Font = FONT,
-			Text = tostring(statusSub),
-			TextColor3 = THEME.SubText,
-			TextSize = 12,
-			TextXAlignment = Enum.TextXAlignment.Left,
-			Parent = footer,
-		})
-	end
-	local fpsLabel = Create("TextLabel", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, 0, 1, rowMid),
-		Size = UDim2.new(0, 64, 0, 16),
-		BackgroundTransparency = 1,
-		Font = FONT_MED,
-		Text = "— FPS",
-		TextColor3 = THEME.SubText,
-		TextSize = 12,
-		TextXAlignment = Enum.TextXAlignment.Right,
-		Parent = footer,
-	})
 
 	-- divider between sidebar and content
 	Create("Frame", {
@@ -1989,7 +1921,7 @@ function NEMESIS.Window(opts)
 		Parent = body,
 	})
 
-	-- content header: breadcrumb | config dropdown + save + 3-dot
+	-- content header: breadcrumb only
 	local CONTENT_PAD = 20
 	local header = Create("Frame", {
 		Position = UDim2.new(0, 0, 0, 14),
@@ -2000,7 +1932,7 @@ function NEMESIS.Window(opts)
 	local breadcrumb = Create("TextLabel", {
 		AnchorPoint = Vector2.new(0, 0.5),
 		Position = UDim2.new(0, 0, 0.5, 0),
-		Size = UDim2.new(1, -180, 1, 0),
+		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 		RichText = true,
 		Font = FONT_MED,
@@ -2010,115 +1942,6 @@ function NEMESIS.Window(opts)
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = header,
 	})
-
-	-- right cluster
-	local more = iconButton(header, "more-vertical", "\u{22EE}", 30, {})
-	more.AnchorPoint = Vector2.new(1, 0.5)
-	more.Position = UDim2.new(1, 0, 0.5, 0)
-	more.MouseButton1Click:Connect(function()
-		if type(opts.onMenu) == "function" then pcall(opts.onMenu)
-		else NEMESIS.Notify({ title = "Menu", content = "More options", duration = 2 }) end
-	end)
-	local saveBtn = iconButton(header, "save", "\u{1F4BE}", 30, { bg = accent, tint = THEME.Text, iconSize = 16 })
-	saveBtn.AnchorPoint = Vector2.new(1, 0.5)
-	saveBtn.Position = UDim2.new(1, -38, 0.5, 0)
-	saveBtn.MouseButton1Click:Connect(function()
-		if type(opts.onSave) == "function" then pcall(opts.onSave)
-		else NEMESIS.Notify({ title = "Config", content = "Saved", duration = 2 }) end
-	end)
-
-	-- compact config dropdown ("HvH")
-	local configs = opts.configs or { "Default" }
-	local cfgValue = configs[1]
-	local cfgField = Create("TextButton", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -76, 0.5, 0),
-		Size = UDim2.new(0, 132, 0, 30),
-		BackgroundColor3 = THEME.Element,
-		Text = "",
-		AutoButtonColor = false,
-		Parent = header,
-	}, { corner(8), stroke(THEME.ElementStroke, 1, 0.35) })
-	Create("TextLabel", {
-		Name = "Val",
-		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 10, 0, 0),
-		Size = UDim2.new(1, -30, 1, 0),
-		Font = FONT_MED,
-		Text = tostring(cfgValue or ""),
-		TextColor3 = THEME.Text,
-		TextSize = 13,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = cfgField,
-	})
-	local cfgArrow = Create("ImageLabel", {
-		BackgroundTransparency = 1,
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, -10, 0.5, 0),
-		Size = UDim2.new(0, 15, 0, 15),
-		ImageColor3 = THEME.SubText,
-		Parent = cfgField,
-	})
-	if not applyIcon(cfgArrow, resolveIcon("chevron-down")) then
-		cfgArrow:Destroy()
-		Create("TextLabel", {
-			BackgroundTransparency = 1, AnchorPoint = Vector2.new(1, 0.5),
-			Position = UDim2.new(1, -8, 0.5, 0), Size = UDim2.new(0, 14, 1, 0),
-			Font = FONT_BOLD, Text = "\u{25BE}", TextColor3 = THEME.SubText, TextSize = 13, Parent = cfgField,
-		})
-	end
-	local cfgList = Create("Frame", {
-		Size = UDim2.new(0, 132, 0, 0),
-		BackgroundColor3 = THEME.Element,
-		Visible = false,
-		ClipsDescendants = true,
-		ZIndex = 40,
-		Parent = screenGui,
-	}, {
-		corner(8), stroke(THEME.Stroke, 1, 0.2),
-		Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
-		padding(4),
-	})
-	local cfgOpen = false
-	local function setCfg(name)
-		cfgValue = name
-		cfgField:FindFirstChild("Val").Text = tostring(name)
-		if type(opts.onConfig) == "function" then pcall(opts.onConfig, name) end
-	end
-	for _, name in ipairs(configs) do
-		local ob = Create("TextButton", {
-			BackgroundColor3 = THEME.Element,
-			Size = UDim2.new(1, 0, 0, 26),
-			Font = FONT,
-			Text = tostring(name),
-			TextColor3 = THEME.Text,
-			TextSize = 13,
-			AutoButtonColor = false,
-			ZIndex = 41,
-			Parent = cfgList,
-		}, { corner(6) })
-		ob.MouseEnter:Connect(function() tween(ob, { BackgroundColor3 = THEME.ElementHover }, TI.EXP) end)
-		ob.MouseLeave:Connect(function() tween(ob, { BackgroundColor3 = THEME.Element }, TI.EXP) end)
-		ob.MouseButton1Click:Connect(function()
-			setCfg(name)
-			cfgOpen = false
-			cfgList.Visible = false
-		end)
-	end
-	cfgField.MouseButton1Click:Connect(function()
-		cfgOpen = not cfgOpen
-		if cfgOpen then
-			pcall(function()
-				local p = cfgField.AbsolutePosition
-				cfgList.Position = UDim2.fromOffset(p.X, p.Y + 34)
-			end)
-			cfgList.Size = UDim2.new(0, 132, 0, math.min(#configs, 6) * 28 + 8)
-			cfgList.Visible = true
-		else
-			cfgList.Visible = false
-		end
-		tween(cfgField, { BackgroundColor3 = cfgOpen and THEME.ElementHover or THEME.Element }, TI.FAST)
-	end)
 
 	-- pages host (each page body lives here; one visible at a time)
 	local pagesHost = Create("Frame", {
@@ -2221,15 +2044,12 @@ function NEMESIS.Window(opts)
 		runSearch(searchBox.Text)
 	end
 
-	-- paint a top-tab pill for its active/inactive state (smoothly when animate)
+	-- paint a top-tab segment for its active/inactive state (smoothly when animate)
 	local function paintTab(tab, active, animate)
 		local info = animate and TI.FAST or TweenInfo.new(0)
-		tween(tab.button, {
-			BackgroundColor3 = active and accent or THEME.Element,
-			BackgroundTransparency = active and 0 or 0.4,
-		}, info)
-		if tab.icon then tween(tab.icon, { ImageColor3 = active and THEME.Text or THEME.SubText }, info) end
+		tween(tab.button, { BackgroundTransparency = active and 0 or 1 }, info)
 		tween(tab.label, { TextColor3 = active and THEME.Text or THEME.SubText }, info)
+		tween(tab.underline, { BackgroundTransparency = active and 0 or 1 }, info)
 	end
 
 	local function showTab(tab)
@@ -2253,56 +2073,39 @@ function NEMESIS.Window(opts)
 	function Win.Tab(name, icon)
 		local tab = { name = tostring(name or "Tab"), pages = {}, activePage = nil }
 
-		-- top-tab pill: icon + label, filled accent when active
+		-- top-tab segment: text only; active = subtle highlight + accent underline
 		local btn = Create("TextButton", {
-			Size = UDim2.new(0, 0, 0, 38),
-			AutomaticSize = Enum.AutomaticSize.X,
-			BackgroundColor3 = THEME.Element,
-			BackgroundTransparency = 0.4,
-			AutoButtonColor = false,
-			Text = "",
-			Parent = tabBar,
-		}, {
-			corner(12),
-			Create("UIListLayout", {
-				FillDirection = Enum.FillDirection.Horizontal,
-				VerticalAlignment = Enum.VerticalAlignment.Center,
-				Padding = UDim.new(0, 7),
-				SortOrder = Enum.SortOrder.LayoutOrder,
-			}),
-			Create("UIPadding", { PaddingLeft = UDim.new(0, 15), PaddingRight = UDim.new(0, 16) }),
-		})
-		local iconImg
-		local iSpec = resolveIcon(icon)
-		if iSpec then
-			iconImg = Create("ImageLabel", {
-				Size = UDim2.new(0, 18, 0, 18),
-				BackgroundTransparency = 1,
-				ImageColor3 = THEME.SubText,
-				LayoutOrder = 1,
-				Parent = btn,
-			})
-			applyIcon(iconImg, iSpec)
-		end
-		local label = Create("TextLabel", {
 			Size = UDim2.new(0, 0, 1, 0),
 			AutomaticSize = Enum.AutomaticSize.X,
+			BackgroundColor3 = THEME.ElementHover,
 			BackgroundTransparency = 1,
+			AutoButtonColor = false,
 			Font = FONT_MED,
 			Text = tostring(name or "Tab"),
 			TextColor3 = THEME.SubText,
 			TextSize = 15,
-			LayoutOrder = 2,
-			Parent = btn,
+			Parent = tabBar,
+		}, {
+			corner(9),
+			Create("UIPadding", { PaddingLeft = UDim.new(0, 18), PaddingRight = UDim.new(0, 18) }),
 		})
+		local underline = Create("Frame", {
+			AnchorPoint = Vector2.new(0.5, 1),
+			Position = UDim2.new(0.5, 0, 1, -3),
+			Size = UDim2.new(1, -24, 0, 2),
+			BackgroundColor3 = accent,
+			BackgroundTransparency = 1,
+			BorderSizePixel = 0,
+			Parent = btn,
+		}, { corner(1) })
 		tab.button = btn
-		tab.icon = iconImg
-		tab.label = label
+		tab.label = btn
+		tab.underline = underline
 		btn.MouseEnter:Connect(function()
-			if activeTab ~= tab then tween(btn, { BackgroundTransparency = 0.12 }, TI.HOVER) end
+			if activeTab ~= tab then tween(btn, { BackgroundTransparency = 0.55 }, TI.HOVER) end
 		end)
 		btn.MouseLeave:Connect(function()
-			if activeTab ~= tab then tween(btn, { BackgroundTransparency = 0.4 }, TI.HOVER) end
+			if activeTab ~= tab then tween(btn, { BackgroundTransparency = 1 }, TI.HOVER) end
 		end)
 		btn.MouseButton1Click:Connect(function() showTab(tab) end)
 		paintTab(tab, false, false)
@@ -2321,7 +2124,7 @@ function NEMESIS.Window(opts)
 		local groupCount = 0
 		local standaloneStarted = false
 
-		local function makePage(pname, popts, groupName)
+		local function makePage(pname, popts, groupName, parentFrame)
 			popts = popts or {}
 			local row = Create("TextButton", {
 				Size = UDim2.new(1, 0, 0, 36),
@@ -2329,7 +2132,7 @@ function NEMESIS.Window(opts)
 				BackgroundTransparency = 1,
 				AutoButtonColor = false,
 				Text = "",
-				Parent = tab.sidebarFrame,
+				Parent = parentFrame or tab.sidebarFrame,
 			}, { corner(8) })
 			local accentBar = Create("Frame", {
 				AnchorPoint = Vector2.new(0, 0.5),
@@ -2477,36 +2280,97 @@ function NEMESIS.Window(opts)
 		local Tab = {}
 		function Tab.Group(gname)
 			groupCount = groupCount + 1
-			local first = groupCount == 1
-			local gh = Create("Frame", {
-				Size = UDim2.new(1, 0, 0, first and 26 or 50),
+			local container = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
 				BackgroundTransparency = 1,
 				Parent = tab.sidebarFrame,
+			}, {
+				Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 6) }),
+				Create("UIPadding", { PaddingTop = UDim.new(0, groupCount > 1 and 12 or 2) }),
 			})
-			if not first then
-				Create("Frame", { -- divider line between sidebar groups
-					Position = UDim2.new(0, 12, 0, 18),
-					Size = UDim2.new(1, -24, 0, 1),
-					BackgroundColor3 = THEME.Stroke,
-					BackgroundTransparency = 0.2,
-					BorderSizePixel = 0,
-					Parent = gh,
-				})
-			end
+			-- boxed, clickable header
+			local header = Create("TextButton", {
+				Size = UDim2.new(1, 0, 0, 38),
+				BackgroundColor3 = THEME.Element,
+				BackgroundTransparency = 0.4,
+				AutoButtonColor = false,
+				Text = "",
+				Parent = container,
+			}, { corner(8), stroke(THEME.Stroke, 1, 0.3), padXY(14, 0) })
 			Create("TextLabel", {
-				AnchorPoint = Vector2.new(0, 1),
-				Position = UDim2.new(0, 14, 1, -2),
-				Size = UDim2.new(1, -24, 0, 14),
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 0, 0.5, 0),
+				Size = UDim2.new(1, -24, 1, 0),
 				BackgroundTransparency = 1,
 				Font = FONT_BOLD,
 				Text = string.upper(tostring(gname or "Group")),
 				TextColor3 = accent,
 				TextSize = 11,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				Parent = gh,
+				Parent = header,
 			})
+			local chev
+			local chevSpec = resolveIcon("chevron-down")
+			if chevSpec then
+				chev = Create("ImageLabel", {
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(1, 0, 0.5, 0),
+					Size = UDim2.new(0, 16, 0, 16),
+					BackgroundTransparency = 1,
+					ImageColor3 = THEME.SubText,
+					Parent = header,
+				})
+				applyIcon(chev, chevSpec)
+			else
+				chev = Create("TextLabel", {
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(1, 0, 0.5, 0),
+					Size = UDim2.new(0, 16, 1, 0),
+					BackgroundTransparency = 1,
+					Font = FONT_BOLD,
+					Text = "\u{25BE}",
+					TextColor3 = THEME.SubText,
+					TextSize = 13,
+					Parent = header,
+				})
+			end
+			-- collapsible pages holder
+			local clip = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				ClipsDescendants = true,
+				Parent = container,
+			})
+			local holder = Create("Frame", {
+				Size = UDim2.new(1, 0, 0, 0),
+				AutomaticSize = Enum.AutomaticSize.Y,
+				BackgroundTransparency = 1,
+				Parent = clip,
+			}, {
+				Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 3) }),
+				Create("UIPadding", { PaddingTop = UDim.new(0, 6) }),
+			})
+			local open = true
+			header.MouseButton1Click:Connect(function()
+				open = not open
+				tween(chev, { Rotation = open and 0 or 180 }, TI.FAST)
+				if open then
+					clip.Visible = true
+					clip.AutomaticSize = Enum.AutomaticSize.Y
+					clip.Size = UDim2.new(1, 0, 0, 0)
+				else
+					local hgt = 0
+					pcall(function() hgt = clip.AbsoluteSize.Y end)
+					clip.AutomaticSize = Enum.AutomaticSize.None
+					clip.Size = UDim2.new(1, 0, 0, hgt)
+					tween(clip, { Size = UDim2.new(1, 0, 0, 0) }, TI.EXPAND)
+					task.delay(0.32, function() if not open then clip.Visible = false end end)
+				end
+			end)
 			local Group = {}
-			function Group.Page(pname, popts) return makePage(pname, popts, gname) end
+			function Group.Page(pname, popts) return makePage(pname, popts, gname, holder) end
 			return Group
 		end
 
@@ -2525,24 +2389,6 @@ function NEMESIS.Window(opts)
 		table.insert(tabs, tab)
 		if #tabs == 1 then showTab(tab) end
 		return Tab
-	end
-
-	--------------------------------------------------------------------
-	-- Live FPS counter
-	--------------------------------------------------------------------
-	if RunService then
-		pcall(function()
-			local acc, frames = 0, 0
-			RunService.Heartbeat:Connect(function(dt)
-				dt = tonumber(dt) or (1 / 60)
-				acc = acc + dt
-				frames = frames + 1
-				if acc >= 0.5 then
-					if fpsLabel then fpsLabel.Text = tostring(math.floor(frames / acc + 0.5)) .. " FPS" end
-					acc = 0; frames = 0
-				end
-			end)
-		end)
 	end
 
 	--------------------------------------------------------------------
@@ -2609,12 +2455,10 @@ function NEMESIS.Window(opts)
 		if resizeGrip then resizeGrip.Visible = not m end
 		if m then
 			topbarFiller.Visible = false
-			topbarDivider.Visible = false
 			tween(root, { Size = UDim2.new(0, W, 0, TOPBAR_H) }, TI.OPEN)
 			setMinIcon("plus", "\u{002B}")
 		else
 			topbarFiller.Visible = true
-			topbarDivider.Visible = true
 			tween(root, { Size = UDim2.new(0, W, 0, H) }, TI.OPEN)
 			setMinIcon("minus", "\u{2013}")
 		end
