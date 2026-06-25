@@ -2489,21 +2489,25 @@ function NEMESIS.Window(opts)
 		ZIndex = 6,
 		Parent = root,
 	})
-	for _, off in ipairs({ { 0, 0 }, { 6, 0 }, { 0, 6 } }) do
+	-- diagonal-line resize handle (Exe6 style): short ╱ strokes in the corner
+	for _, d in ipairs({ { len = 16, off = 1 }, { len = 11, off = 5 }, { len = 6, off = 9 } }) do
 		Create("Frame", {
 			AnchorPoint = Vector2.new(1, 1),
-			Position = UDim2.new(1, -off[1], 1, -off[2]),
-			Size = UDim2.new(0, 3, 0, 3),
+			Position = UDim2.new(1, -d.off, 1, -d.off),
+			Size = UDim2.new(0, 2, 0, d.len),
+			Rotation = 45,
 			BackgroundColor3 = THEME.SubText,
-			BackgroundTransparency = 0.3,
+			BackgroundTransparency = 0.25,
 			BorderSizePixel = 0,
 			ZIndex = 6,
 			Parent = resizeGrip,
-		}, { corner(2) })
+		}, { corner(1) })
 	end
 	do
 		local resizing = false
 		local startInput, startW, startH
+		-- short tween so the window glides toward the cursor (Exe6 smooth resize)
+		local RESIZE_TI = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 		resizeGrip.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1
 				or input.UserInputType == Enum.UserInputType.Touch then
@@ -2523,9 +2527,10 @@ function NEMESIS.Window(opts)
 				local delta = input.Position - startInput
 				local maxW = math.max(minW, vp.X / scale - 40)
 				local maxH = math.max(minH, vp.Y / scale - 40)
-				W = math.clamp(startW + delta.X / scale, minW, maxW)
-				H = math.clamp(startH + delta.Y / scale, minH, maxH)
-				root.Size = UDim2.new(0, W, 0, H)
+				-- *2: window is centre-anchored, so the corner tracks the cursor
+				W = math.clamp(startW + (delta.X / scale) * 2, minW, maxW)
+				H = math.clamp(startH + (delta.Y / scale) * 2, minH, maxH)
+				tween(root, { Size = UDim2.new(0, W, 0, H) }, RESIZE_TI)
 			end
 		end)
 	end
