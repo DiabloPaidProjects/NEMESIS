@@ -1015,6 +1015,15 @@ function Elements.Dropdown(parent, accent, opts)
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		Parent = field,
 	})
+		-- neverlose "liner": a thin divider between the value and the arrow
+		Create("Frame", {
+			AnchorPoint = Vector2.new(1, 0.5),
+			Position = UDim2.new(1, -26, 0.5, 0),
+			Size = UDim2.new(0, 2, 0, 14),
+			BackgroundColor3 = THEME.ElementStroke,
+			BorderSizePixel = 0,
+			Parent = field,
+		})
 	local arrow
 	local chevSpec = resolveIcon("chevron-down")
 	if chevSpec then
@@ -1096,57 +1105,62 @@ function Elements.Dropdown(parent, accent, opts)
 		for _, b in ipairs(optionButtons) do b:Destroy() end
 		optionButtons = {}
 		for _, v in ipairs(options) do
-			-- Rayfield-style option row: accent-tinted when selected, check on multi
+			-- neverlose-style option: accent-gradient dot on the left + the text
+			-- slides right when selected; text dimmed when not selected
 			local ob = Create("TextButton", {
-				BackgroundColor3 = accent,
 				BackgroundTransparency = 1,
-				Size = UDim2.new(1, 0, 0, 30),
+				Size = UDim2.new(1, 0, 0, 26),
 				AutoButtonColor = false,
 				Text = "",
 				Parent = listInner,
-			}, { corner(6) })
-			local olabel = Create("TextLabel", {
+			})
+			local dot = Create("Frame", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				Position = UDim2.new(0, 8, 0.5, 0),
+				Size = UDim2.new(0, 6, 0, 6),
+				BackgroundColor3 = accent,
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 10, 0, 0),
-				Size = UDim2.new(1, -34, 1, 0),
+				BorderSizePixel = 0,
+				Parent = ob,
+			}, {
+				corner(3),
+				Create("UIGradient", {
+					Rotation = 90,
+					Color = ColorSequence.new(accent, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.35)),
+				}),
+			})
+			local olabel = Create("TextLabel", {
+				AnchorPoint = Vector2.new(0, 0.5),
+				BackgroundTransparency = 1,
+				Position = UDim2.new(0, 8, 0.5, 0),
+				Size = UDim2.new(1, -16, 0, 15),
 				Font = FONT,
 				Text = tostring(v),
 				TextColor3 = THEME.Text,
+				TextTransparency = 0.35,
 				TextSize = 13,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				Parent = ob,
 			})
-			local tick
-			local tickSpec = resolveIcon("check")
-			if tickSpec then
-				tick = Create("ImageLabel", {
-					AnchorPoint = Vector2.new(1, 0.5),
-					Position = UDim2.new(1, -10, 0.5, 0),
-					Size = UDim2.new(0, 14, 0, 14),
-					BackgroundTransparency = 1,
-					ImageColor3 = accent,
-					ImageTransparency = 1,
-					Parent = ob,
-				})
-				applyIcon(tick, tickSpec)
-			end
 			local function paint(animate)
 				local on = multi and selected[v] or (single == v)
 				local info = animate and TI.FAST or TweenInfo.new(0)
-				tween(ob, { BackgroundTransparency = on and 0.82 or 1 }, info)
-				tween(olabel, { TextColor3 = on and accent or THEME.Text }, info)
-				if tick then tween(tick, { ImageTransparency = (on and multi) and 0 or 1 }, info) end
+				tween(dot, { BackgroundTransparency = on and 0 or 1 }, info)
+				tween(olabel, {
+					TextTransparency = on and 0 or 0.35,
+					Position = on and UDim2.new(0, 18, 0.5, 0) or UDim2.new(0, 8, 0.5, 0),
+				}, info)
 			end
 			ob._paint = paint
 			paint(false)
 			ob.MouseEnter:Connect(function()
 				local on = multi and selected[v] or (single == v)
-				if not on then tween(ob, { BackgroundTransparency = 0.9 }, TI.HOVER) end
+				if not on then tween(olabel, { TextTransparency = 0.1 }, TI.HOVER) end
 			end)
 			ob.MouseLeave:Connect(function()
 				local on = multi and selected[v] or (single == v)
-				if not on then tween(ob, { BackgroundTransparency = 1 }, TI.HOVER) end
+				if not on then tween(olabel, { TextTransparency = 0.35 }, TI.HOVER) end
 			end)
 			ob.MouseButton1Click:Connect(function()
 				if multi then selected[v] = not selected[v] else single = v end
@@ -1163,8 +1177,8 @@ function Elements.Dropdown(parent, accent, opts)
 	local DROP_TI = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	function control.Toggle(force)
 		open = (force == nil) and (not open) or force
-		-- exact fit: 30px rows + 3px gaps + 5px top/bottom padding
-		local target = open and (math.min(#options, 6) * 33 + 7) or 0
+		-- exact fit: 26px rows + 3px gaps + 5px top/bottom padding
+		local target = open and (math.min(#options, 8) * 29 + 7) or 0
 		tween(listHolder, { Size = UDim2.new(1, 0, 0, target) }, DROP_TI)
 		tween(arrow, { Rotation = open and 180 or 0 }, TI.FAST)
 		tween(field, { BackgroundColor3 = open and THEME.ElementHover or THEME.Element }, TI.FAST)
