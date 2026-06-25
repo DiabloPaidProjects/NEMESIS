@@ -1727,7 +1727,7 @@ function NEMESIS.Window(opts)
 		ClipsDescendants = true,
 		Parent = tabArea,
 	}, {
-		corner(14),
+		corner(8),
 		stroke(THEME.Stroke, 1, 0.2),
 		Create("UIListLayout", {
 			FillDirection = Enum.FillDirection.Horizontal,
@@ -2075,7 +2075,7 @@ function NEMESIS.Window(opts)
 		local btn = Create("TextButton", {
 			Size = UDim2.new(0, 0, 1, 0),
 			AutomaticSize = Enum.AutomaticSize.X,
-			BackgroundColor3 = Color3.fromRGB(36, 38, 48),
+			BackgroundColor3 = Color3.fromRGB(43, 45, 57),
 			BackgroundTransparency = 1,
 			AutoButtonColor = false,
 			Font = FONT_MED,
