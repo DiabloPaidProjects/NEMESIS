@@ -1596,7 +1596,7 @@ function NEMESIS.Window(opts)
 	local W = opts.width or (IS_MOBILE and 600 or 900)
 	local H = opts.height or (IS_MOBILE and 440 or 600)
 	local TOPBAR_H = 60
-	local SIDEBAR_W = IS_MOBILE and 168 or 212
+	local SIDEBAR_W = IS_MOBILE and 158 or 194
 	local FOOTER_H = 96
 	local RADIUS = 16
 
@@ -1869,26 +1869,17 @@ function NEMESIS.Window(opts)
 		Parent = root,
 	})
 
+	-- sidebar as a floating rounded panel (card), inset from the window edges,
+	-- with a visible border; no divider between it and the content
+	local SB_MARGIN = 12
+	local SB_GAP = 12
 	local sidebarBG = Create("Frame", {
-		Size = UDim2.new(0, SIDEBAR_W, 1, 0),
+		Position = UDim2.new(0, SB_MARGIN, 0, SB_MARGIN),
+		Size = UDim2.new(0, SIDEBAR_W, 1, -SB_MARGIN * 2),
 		BackgroundColor3 = THEME.Sidebar,
 		BorderSizePixel = 0,
 		Parent = body,
-	}, { corner(RADIUS) })
-	Create("Frame", {
-		Size = UDim2.new(1, 0, 0, RADIUS),
-		BackgroundColor3 = THEME.Sidebar,
-		BorderSizePixel = 0,
-		Parent = sidebarBG,
-	})
-	Create("Frame", {
-		AnchorPoint = Vector2.new(1, 0),
-		Position = UDim2.new(1, 0, 0, 0),
-		Size = UDim2.new(0, RADIUS, 1, 0),
-		BackgroundColor3 = THEME.Sidebar,
-		BorderSizePixel = 0,
-		Parent = sidebarBG,
-	})
+	}, { corner(14), stroke(THEME.Stroke, 1, 0.15) })
 
 	-- scroll region (tab sidebars stack here, one visible at a time)
 	local sidebarScroll = Create("ScrollingFrame", {
@@ -1900,21 +1891,11 @@ function NEMESIS.Window(opts)
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
 		ZIndex = 2,
 		Parent = sidebarBG,
-	}, { padXY(12, 12) })
-
-	-- divider between sidebar and content
-	Create("Frame", {
-		Position = UDim2.new(0, SIDEBAR_W, 0, 0),
-		Size = UDim2.new(0, 1, 1, 0),
-		BackgroundColor3 = THEME.Stroke,
-		BackgroundTransparency = 0.4,
-		BorderSizePixel = 0,
-		Parent = body,
-	})
+	}, { padXY(10, 10) })
 
 	local content = Create("Frame", {
-		Position = UDim2.new(0, SIDEBAR_W + 1, 0, 0),
-		Size = UDim2.new(1, -(SIDEBAR_W + 1), 1, 0),
+		Position = UDim2.new(0, SB_MARGIN + SIDEBAR_W + SB_GAP, 0, 0),
+		Size = UDim2.new(1, -(SB_MARGIN + SIDEBAR_W + SB_GAP), 1, 0),
 		BackgroundTransparency = 1,
 		Parent = body,
 	})
@@ -2191,7 +2172,7 @@ function NEMESIS.Window(opts)
 			popts = popts or {}
 			-- sub-tab row: plain text, no icon / accent bar (matches the mockup)
 			local row = Create("TextButton", {
-				Size = UDim2.new(1, 0, 0, 40),
+				Size = UDim2.new(1, 0, 0, 34),
 				BackgroundColor3 = THEME.SidebarActive,
 				BackgroundTransparency = 1,
 				AutoButtonColor = false,
@@ -2200,12 +2181,12 @@ function NEMESIS.Window(opts)
 			}, { corner(8) })
 			local label = Create("TextLabel", {
 				BackgroundTransparency = 1,
-				Position = UDim2.new(0, 16, 0, 0),
-				Size = UDim2.new(1, -28, 1, 0),
+				Position = UDim2.new(0, 14, 0, 0),
+				Size = UDim2.new(1, -24, 1, 0),
 				Font = FONT_MED,
 				Text = tostring(pname or "Page"),
 				TextColor3 = SIDEBAR_PAGE_TEXT,
-				TextSize = 14,
+				TextSize = 13,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				Parent = row,
@@ -2349,22 +2330,22 @@ function NEMESIS.Window(opts)
 			})
 			-- purple-tinted clickable header bar
 			local header = Create("TextButton", {
-				Size = UDim2.new(1, 0, 0, 40),
+				Size = UDim2.new(1, 0, 0, 32),
 				BackgroundColor3 = Color3.fromRGB(41, 32, 66),
 				BackgroundTransparency = 0.1,
 				AutoButtonColor = false,
 				Text = "",
 				Parent = container,
-			}, { corner(10), stroke(Color3.fromRGB(78, 56, 140), 1, 0.35), padXY(16, 0) })
+			}, { corner(8), stroke(Color3.fromRGB(78, 56, 140), 1, 0.35), padXY(12, 0) })
 			Create("TextLabel", {
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.new(0, 0, 0.5, 0),
-				Size = UDim2.new(1, -28, 1, 0),
+				Size = UDim2.new(1, -22, 1, 0),
 				BackgroundTransparency = 1,
 				Font = FONT_BOLD,
 				Text = string.upper(tostring(gname or "Group")),
 				TextColor3 = accent,
-				TextSize = 12,
+				TextSize = 11,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				Parent = header,
 			})
@@ -2374,7 +2355,7 @@ function NEMESIS.Window(opts)
 				chev = Create("ImageLabel", {
 					AnchorPoint = Vector2.new(1, 0.5),
 					Position = UDim2.new(1, 0, 0.5, 0),
-					Size = UDim2.new(0, 18, 0, 18),
+					Size = UDim2.new(0, 14, 0, 14),
 					BackgroundTransparency = 1,
 					ImageColor3 = accent,
 					Parent = header,
