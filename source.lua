@@ -1041,17 +1041,19 @@ function Elements.Dropdown(parent, accent, opts)
 		ClipsDescendants = true,
 		Parent = parent,
 	})
+	local listStroke = stroke(THEME.Stroke, 1, 1)
 	local listInner = Create("Frame", {
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -ROW_PAD, 0, 2),
 		Size = UDim2.new(FIELD_FRAC, -16, 1, -2),
 		BackgroundColor3 = THEME.Element,
+		BackgroundTransparency = 1,
 		Parent = listHolder,
 	}, {
 		corner(8),
-		stroke(THEME.Stroke, 1, 0.3),
-		Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }),
-		padding(4),
+		listStroke,
+		Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 3) }),
+		padding(5),
 	})
 
 	local open = false
@@ -1084,37 +1086,61 @@ function Elements.Dropdown(parent, accent, opts)
 		for _, b in ipairs(optionButtons) do b:Destroy() end
 		optionButtons = {}
 		for _, v in ipairs(options) do
+			-- Rayfield-style option row: accent-tinted when selected, check on multi
 			local ob = Create("TextButton", {
-				BackgroundColor3 = THEME.Element,
-				Size = UDim2.new(1, 0, 0, 28),
-				Font = FONT,
-				Text = tostring(v),
-				TextColor3 = THEME.Text,
-				TextSize = 13,
+				BackgroundColor3 = accent,
+				BackgroundTransparency = 1,
+				Size = UDim2.new(1, 0, 0, 30),
 				AutoButtonColor = false,
+				Text = "",
 				Parent = listInner,
 			}, { corner(6) })
-			local function paint()
-				local on = multi and selected[v] or (single == v)
-				ob.TextColor3 = on and accent or THEME.Text
-				ob.BackgroundColor3 = on and THEME.ElementHover or THEME.Element
+			local olabel = Create("TextLabel", {
+				BackgroundTransparency = 1,
+				Position = UDim2.new(0, 10, 0, 0),
+				Size = UDim2.new(1, -34, 1, 0),
+				Font = FONT,
+				Text = tostring(v),
+				TextColor3 = THEME.SubText,
+				TextSize = 13,
+				TextXAlignment = Enum.TextXAlignment.Left,
+				TextTruncate = Enum.TextTruncate.AtEnd,
+				Parent = ob,
+			})
+			local tick
+			local tickSpec = resolveIcon("check")
+			if tickSpec then
+				tick = Create("ImageLabel", {
+					AnchorPoint = Vector2.new(1, 0.5),
+					Position = UDim2.new(1, -10, 0.5, 0),
+					Size = UDim2.new(0, 14, 0, 14),
+					BackgroundTransparency = 1,
+					ImageColor3 = accent,
+					ImageTransparency = 1,
+					Parent = ob,
+				})
+				applyIcon(tick, tickSpec)
 			end
-			paint()
+			local function paint(animate)
+				local on = multi and selected[v] or (single == v)
+				local info = animate and TI.FAST or TweenInfo.new(0)
+				tween(ob, { BackgroundTransparency = on and 0.82 or 1 }, info)
+				tween(olabel, { TextColor3 = on and accent or THEME.SubText }, info)
+				if tick then tween(tick, { ImageTransparency = (on and multi) and 0 or 1 }, info) end
+			end
+			ob._paint = paint
+			paint(false)
 			ob.MouseEnter:Connect(function()
 				local on = multi and selected[v] or (single == v)
-				if not on then tween(ob, { BackgroundColor3 = THEME.ElementHover }, TI.EXP) end
+				if not on then tween(ob, { BackgroundTransparency = 0.9 }, TI.HOVER) end
 			end)
 			ob.MouseLeave:Connect(function()
 				local on = multi and selected[v] or (single == v)
-				if not on then tween(ob, { BackgroundColor3 = THEME.Element }, TI.EXP) end
+				if not on then tween(ob, { BackgroundTransparency = 1 }, TI.HOVER) end
 			end)
 			ob.MouseButton1Click:Connect(function()
 				if multi then selected[v] = not selected[v] else single = v end
-				for _, b in ipairs(optionButtons) do
-					b.TextColor3 = THEME.Text
-					b.BackgroundColor3 = THEME.Element
-				end
-				paint()
+				for _, b in ipairs(optionButtons) do b._paint(true) end
 				refreshLabel()
 				fire()
 				if not multi then control.Toggle(false) end
@@ -1123,12 +1149,16 @@ function Elements.Dropdown(parent, accent, opts)
 		end
 	end
 
+	-- smooth Rayfield-style expand: glide the list height + fade the panel in/out
+	local DROP_TI = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	function control.Toggle(force)
 		open = (force == nil) and (not open) or force
-		local target = open and (math.min(#options, 6) * 30 + 10) or 0
-		tween(listHolder, { Size = UDim2.new(1, 0, 0, target) }, TI.EXPAND)
+		local target = open and (math.min(#options, 6) * 33 + 10) or 0
+		tween(listHolder, { Size = UDim2.new(1, 0, 0, target) }, DROP_TI)
 		tween(arrow, { Rotation = open and 180 or 0 }, TI.FAST)
 		tween(field, { BackgroundColor3 = open and THEME.ElementHover or THEME.Element }, TI.FAST)
+		tween(listInner, { BackgroundTransparency = open and 0 or 1 }, DROP_TI)
+		tween(listStroke, { Transparency = open and 0.3 or 1 }, DROP_TI)
 	end
 	function control.Set(v)
 		if multi then
