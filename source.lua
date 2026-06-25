@@ -2541,14 +2541,15 @@ function NEMESIS.Window(opts)
 	local resizeGrip = Create("ImageButton", {
 		Name = "ResizeGrip",
 		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -6, 1, -6),
-		Size = UDim2.new(0, 44, 0, 44),
+		Position = UDim2.new(1, -4, 1, -4),
+		Size = UDim2.new(0, 54, 0, 54),
 		BackgroundTransparency = 1,
 		Image = "",
 		AutoButtonColor = false,
 		ZIndex = 7,
 		Parent = root,
 	})
+	-- 9-sliced so the curved icon stretches cleanly toward the cursor
 	local resizeIcon = Create("ImageLabel", {
 		Name = "Icon",
 		AnchorPoint = Vector2.new(1, 1),
@@ -2556,8 +2557,11 @@ function NEMESIS.Window(opts)
 		Size = UDim2.new(0, 18, 0, 18),
 		BackgroundTransparency = 1,
 		Image = "rbxassetid://86527207319523",
-		ImageColor3 = Color3.fromRGB(82, 82, 82),
-		ImageTransparency = 0.62,
+		ImageColor3 = Color3.fromRGB(90, 90, 98),
+		ImageTransparency = 0,
+		ScaleType = Enum.ScaleType.Slice,
+		SliceCenter = Rect.new(51, 52, 51, 52),
+		SliceScale = 0.5,
 		ZIndex = 8,
 		Parent = resizeGrip,
 	})
@@ -2583,19 +2587,35 @@ function NEMESIS.Window(opts)
 			local vp = viewportSize()
 			return math.max(minW, vp.X / scale - 40), math.max(minH, vp.Y / scale - 40)
 		end
-		-- exact SIRIUS setLiveTrackResizeVisual: icon grows/brightens on hover/drag
-		local function setGrip(mode)
-			local size, color, transparency = 18, Color3.fromRGB(82, 82, 82), 0.62
-			if mode == "drag" then
-				size, color, transparency = 23, Color3.fromRGB(112, 112, 112), 0.08
-			elseif mode == "hover" then
-				size, color, transparency = 21, Color3.fromRGB(98, 98, 98), 0.28
-			end
+		-- SIRIUS stretch: normalize the cursor's position inside the grip, then
+		-- stretch the icon NON-uniformly toward it (wider/taller as you move in)
+		local function normResize()
+			local mouse = UserInputService:GetMouseLocation()
+			local insetY = 0
+			pcall(function() insetY = game:GetService("GuiService"):GetGuiInset().Y end)
+			local pos, sz = resizeGrip.AbsolutePosition, resizeGrip.AbsoluteSize
+			local relX = (mouse.X - pos.X) / math.max(sz.X, 1)
+			local relY = ((mouse.Y - insetY) - pos.Y) / math.max(sz.Y, 1)
+			return Vector2.new(1 - math.clamp(relX, 0, 1), 1 - math.clamp(relY, 0, 1))
+		end
+		local function stretchIcon(duration)
+			local n = normResize()
 			tween(resizeIcon, {
-				Size = UDim2.new(0, size, 0, size),
-				ImageColor3 = color,
-				ImageTransparency = transparency,
-			}, TweenInfo.new(0.16, Enum.EasingStyle.Sine, Enum.EasingDirection.Out))
+				Size = UDim2.new(0, 20 + n.X * 30, 0, 20 + n.Y * 30),
+				ImageColor3 = Color3.fromRGB(125, 125, 135),
+			}, TweenInfo.new(duration or 0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out))
+		end
+		local function pressIcon()
+			tween(resizeIcon, {
+				Size = UDim2.new(0, 30, 0, 30),
+				ImageColor3 = Color3.fromRGB(150, 150, 160),
+			}, TweenInfo.new(0.12, Enum.EasingStyle.Quint, Enum.EasingDirection.Out))
+		end
+		local function resetIcon()
+			tween(resizeIcon, {
+				Size = UDim2.new(0, 18, 0, 18),
+				ImageColor3 = Color3.fromRGB(90, 90, 98),
+			}, TweenInfo.new(0.18, Enum.EasingStyle.Quint, Enum.EasingDirection.Out))
 		end
 		local function stopLoop()
 			if loopConn then loopConn:Disconnect(); loopConn = nil end
@@ -2621,11 +2641,19 @@ function NEMESIS.Window(opts)
 
 		resizeGrip.MouseEnter:Connect(function()
 			hovering = true
-			if not resizing then setGrip("hover") end
+			if not resizing then stretchIcon(0.18) end
 		end)
 		resizeGrip.MouseLeave:Connect(function()
 			hovering = false
-			if not resizing then setGrip("idle") end
+			if not resizing then resetIcon() end
+		end)
+		-- moving the cursor inside the grip restretches the icon toward it
+		resizeGrip.InputChanged:Connect(function(input)
+			if resizing then return end
+			if input.UserInputType == Enum.UserInputType.MouseMovement
+				or input.UserInputType == Enum.UserInputType.Touch then
+				stretchIcon(0.14)
+			end
 		end)
 		resizeGrip.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1
@@ -2634,7 +2662,7 @@ function NEMESIS.Window(opts)
 				startPointer = getPointer(input)
 				startW, startH = W, H
 				targetW, targetH = W, H
-				setGrip("drag")
+				pressIcon()
 				startLoop()
 			end
 		end)
@@ -2654,7 +2682,7 @@ function NEMESIS.Window(opts)
 				or input.UserInputType == Enum.UserInputType.Touch then
 				if resizing then
 					resizing = false
-					setGrip(hovering and "hover" or "idle")
+					if hovering then stretchIcon(0.18) else resetIcon() end
 				end
 			end
 		end)
