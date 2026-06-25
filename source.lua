@@ -2536,8 +2536,8 @@ function NEMESIS.Window(opts)
 	do
 		local resizing = false
 		local startInput, startW, startH
-		-- short tween so the window glides toward the cursor (Exe6 smooth resize)
-		local RESIZE_TI = TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
+		-- the exact Exe6 resize feel: a long exponential glide toward the cursor
+		local RESIZE_TI = TweenInfo.new(0.5, Enum.EasingStyle.Exponential, Enum.EasingDirection.Out)
 		resizeGrip.InputBegan:Connect(function(input)
 			if input.UserInputType == Enum.UserInputType.MouseButton1
 				or input.UserInputType == Enum.UserInputType.Touch then
