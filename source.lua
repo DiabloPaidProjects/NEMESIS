@@ -574,7 +574,7 @@ function NEMESIS.Notify(opts)
 		Font = FONT_BOLD,
 		Text = tostring(opts.title or "Notification"),
 		TextColor3 = accent,
-		TextSize = 15,
+		TextSize = 16,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTransparency = 1,
 		Parent = card,
@@ -588,7 +588,7 @@ function NEMESIS.Notify(opts)
 		Font = FONT,
 		Text = tostring(opts.content or ""),
 		TextColor3 = THEME.Text,
-		TextSize = 14,
+		TextSize = 15,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTransparency = 1,
@@ -655,7 +655,7 @@ local function rowText(parent, text, desc, reserveScale, reservePx)
 			Font = FONT_MED,
 			Text = tostring(text or ""),
 			TextColor3 = THEME.Text,
-			TextSize = 14,
+			TextSize = 15,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			Parent = col,
@@ -666,7 +666,7 @@ local function rowText(parent, text, desc, reserveScale, reservePx)
 			Font = FONT,
 			Text = tostring(desc),
 			TextColor3 = THEME.SubText,
-			TextSize = 12,
+			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			TextTruncate = Enum.TextTruncate.AtEnd,
 			Parent = col,
@@ -679,7 +679,7 @@ local function rowText(parent, text, desc, reserveScale, reservePx)
 		Font = FONT_MED,
 		Text = tostring(text or ""),
 		TextColor3 = THEME.Text,
-		TextSize = 14,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextYAlignment = Enum.TextYAlignment.Center,
 		TextTruncate = Enum.TextTruncate.AtEnd,
@@ -712,7 +712,7 @@ function Elements.Label(parent, accent, text)
 		Font = FONT,
 		Text = tostring((type(text) == "table" and text.text) or text or ""),
 		TextColor3 = THEME.SubText,
-		TextSize = 14,
+		TextSize = 15,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = parent,
@@ -743,7 +743,7 @@ function Elements.Paragraph(parent, accent, opts)
 			Font = FONT_BOLD,
 			Text = tostring(opts.title or "Title"),
 			TextColor3 = THEME.Text,
-			TextSize = 15,
+			TextSize = 16,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
 		Create("TextLabel", {
@@ -754,7 +754,7 @@ function Elements.Paragraph(parent, accent, opts)
 			Font = FONT,
 			Text = tostring(opts.content or ""),
 			TextColor3 = THEME.SubText,
-			TextSize = 14,
+			TextSize = 15,
 			TextWrapped = true,
 			TextXAlignment = Enum.TextXAlignment.Left,
 		}),
@@ -784,7 +784,7 @@ function Elements.Button(parent, accent, opts)
 		Font = FONT_MED,
 		Text = tostring(opts.button or "Run"),
 		TextColor3 = accent,
-		TextSize = 14,
+		TextSize = 15,
 		Parent = row,
 	}, { corner(8), stroke(THEME.ElementStroke, 1, 0.35) })
 	click.MouseEnter:Connect(function() tween(chip, { BackgroundColor3 = THEME.ElementHover }, TI.EXP) end)
@@ -920,7 +920,7 @@ function Elements.Slider(parent, accent, opts)
 		Font = FONT_MED,
 		Text = fmt(value),
 		TextColor3 = THEME.Text,
-		TextSize = 14,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = cluster,
 	})
@@ -1010,7 +1010,7 @@ function Elements.Dropdown(parent, accent, opts)
 		Font = FONT,
 		Text = "...",
 		TextColor3 = THEME.Text,
-		TextSize = 14,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		TextTruncate = Enum.TextTruncate.AtEnd,
 		Parent = field,
@@ -1045,7 +1045,7 @@ function Elements.Dropdown(parent, accent, opts)
 			Font = FONT_BOLD,
 			Text = "\u{25BE}",
 			TextColor3 = THEME.SubText,
-			TextSize = 14,
+			TextSize = 15,
 			Parent = field,
 		})
 	end
@@ -1138,7 +1138,7 @@ function Elements.Dropdown(parent, accent, opts)
 				Text = tostring(v),
 				TextColor3 = THEME.Text,
 				TextTransparency = 0.35,
-				TextSize = 15,
+				TextSize = 16,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				Parent = ob,
@@ -1231,7 +1231,7 @@ function Elements.Input(parent, accent, opts)
 		Text = tostring(opts.default or ""),
 		TextColor3 = THEME.Text,
 		PlaceholderColor3 = THEME.SubText,
-		TextSize = 14,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ClearTextOnFocus = opts.clearOnFocus and true or false,
 		Parent = field,
@@ -1292,7 +1292,7 @@ function Elements.Keybind(parent, accent, opts)
 		Font = FONT_MED,
 		Text = keyDisplay(key),
 		TextColor3 = THEME.Text,
-		TextSize = 14,
+		TextSize = 15,
 		AutoButtonColor = false,
 		Parent = field,
 	})
@@ -1484,17 +1484,17 @@ function Elements.ColorPicker(parent, accent, opts)
 		local hexRow = Create("Frame", { Size = UDim2.new(1, 0, 0, 26), BackgroundTransparency = 1, Parent = panel })
 		Create("TextLabel", {
 			BackgroundTransparency = 1, Size = UDim2.new(0, 36, 1, 0),
-			Font = FONT_BOLD, Text = "HEX", TextColor3 = THEME.SubText, TextSize = 13,
+			Font = FONT_BOLD, Text = "HEX", TextColor3 = THEME.SubText, TextSize = 14,
 			TextXAlignment = Enum.TextXAlignment.Left, Parent = hexRow,
 		})
 		hexBox = Create("TextBox", {
 			Position = UDim2.new(0, 40, 0, 0), Size = UDim2.new(1, -90, 1, 0),
 			BackgroundColor3 = THEME.Element, Font = FONT, Text = "#FFFFFF",
-			TextColor3 = THEME.Text, TextSize = 14, Parent = hexRow,
+			TextColor3 = THEME.Text, TextSize = 15, Parent = hexRow,
 		}, { corner(6), stroke(THEME.Stroke, 1, 0.3), padding(6) })
 		pctLabel = Create("TextLabel", {
 			AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 44, 1, 0),
-			BackgroundTransparency = 1, Font = FONT_MED, Text = "100%", TextColor3 = THEME.SubText, TextSize = 14,
+			BackgroundTransparency = 1, Font = FONT_MED, Text = "100%", TextColor3 = THEME.SubText, TextSize = 15,
 			TextXAlignment = Enum.TextXAlignment.Right, Parent = hexRow,
 		})
 		hexBox.FocusLost:Connect(function()
@@ -1607,7 +1607,7 @@ local function makeSection(host, accent, title)
 			Font = FONT_BOLD,
 			Text = string.upper(tostring(title)),
 			TextColor3 = accent,
-			TextSize = 12,
+			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = header,
 		})
@@ -1632,7 +1632,7 @@ local function makeSection(host, accent, title)
 				Font = FONT_BOLD,
 				Text = "\u{25B4}",
 				TextColor3 = THEME.SubText,
-				TextSize = 15,
+				TextSize = 16,
 				Parent = header,
 			})
 		end
@@ -1781,7 +1781,7 @@ function NEMESIS.Window(opts)
 			Font = FONT_BOLD,
 			Text = "N",
 			TextColor3 = THEME.Text,
-			TextSize = 20,
+			TextSize = 21,
 			Parent = tile,
 		})
 	end
@@ -1795,7 +1795,7 @@ function NEMESIS.Window(opts)
 		Font = FONT_BOLD,
 		Text = string.upper(tostring(opts.title or "NEMESIS")),
 		TextColor3 = THEME.Text,
-		TextSize = 18,
+		TextSize = 19,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = topbar,
 	})
@@ -1845,7 +1845,7 @@ function NEMESIS.Window(opts)
 			Font = FONT_BOLD,
 			Text = "",
 			TextColor3 = props.tint or THEME.SubText,
-			TextSize = 16,
+			TextSize = 17,
 			AutoButtonColor = false,
 			Parent = parent,
 		}, props.bg and { corner(8) } or nil)
@@ -1950,7 +1950,7 @@ function NEMESIS.Window(opts)
 		Text = "",
 		TextColor3 = THEME.Text,
 		PlaceholderColor3 = THEME.SubText,
-		TextSize = 14,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		ClearTextOnFocus = false,
 		Parent = searchPill,
@@ -2016,7 +2016,7 @@ function NEMESIS.Window(opts)
 		Font = FONT_MED,
 		Text = "",
 		TextColor3 = THEME.SubText,
-		TextSize = 14,
+		TextSize = 15,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = header,
 	})
@@ -2209,7 +2209,7 @@ function NEMESIS.Window(opts)
 			Font = FONT_MED,
 			Text = tostring(name or "Tab"),
 			TextColor3 = THEME.SubText,
-			TextSize = 15,
+			TextSize = 16,
 			ZIndex = 2,
 			Parent = btn,
 		}, {
@@ -2284,7 +2284,7 @@ function NEMESIS.Window(opts)
 				Font = FONT_MED,
 				Text = tostring(pname or "Page"),
 				TextColor3 = SIDEBAR_PAGE_TEXT,
-				TextSize = 14,
+				TextSize = 15,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
 				Parent = row,
@@ -2443,7 +2443,7 @@ function NEMESIS.Window(opts)
 				Font = FONT_BOLD,
 				Text = string.upper(tostring(gname or "Group")),
 				TextColor3 = accent,
-				TextSize = 12,
+				TextSize = 13,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				Parent = header,
 			})
@@ -2468,7 +2468,7 @@ function NEMESIS.Window(opts)
 					Font = FONT_BOLD,
 					Text = "\u{25BE}",
 					TextColor3 = accent,
-					TextSize = 14,
+					TextSize = 15,
 					Parent = header,
 				})
 			end
@@ -2723,7 +2723,7 @@ function NEMESIS.Window(opts)
 			Font = FONT_BOLD,
 			Text = "N",
 			TextColor3 = THEME.Text,
-			TextSize = 20,
+			TextSize = 21,
 			Parent = screenGui,
 		}, { corner(22), stroke(THEME.Stroke, 1, 0.4) })
 		makeDraggable(fab, fab)
