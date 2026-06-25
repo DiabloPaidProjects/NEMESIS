@@ -1889,6 +1889,7 @@ function NEMESIS.Window(opts)
 		ScrollBarThickness = 0,
 		CanvasSize = UDim2.new(0, 0, 0, 0),
 		AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollingDirection = Enum.ScrollingDirection.Y,
 		ZIndex = 2,
 		Parent = sidebarBG,
 	})
@@ -2155,18 +2156,17 @@ function NEMESIS.Window(opts)
 		paintTab(tab, false, false)
 
 		-- this tab's sidebar column
+		-- explicit pixel width + offset (NOT scale) so children can't overflow the
+		-- card the way scale-width children do inside a ScrollingFrame
 		tab.sidebarFrame = Create("Frame", {
-			Size = UDim2.new(1, 0, 0, 0),
+			Position = UDim2.new(0, 12, 0, 12),
+			Size = UDim2.new(0, SIDEBAR_W - 24, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			BackgroundTransparency = 1,
 			Visible = false,
 			Parent = sidebarScroll,
 		}, {
 			Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 3) }),
-			Create("UIPadding", {
-				PaddingLeft = UDim.new(0, 12), PaddingRight = UDim.new(0, 12),
-				PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12),
-			}),
 		})
 
 		local groupCount = 0
