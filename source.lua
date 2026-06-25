@@ -223,7 +223,12 @@ local function Create(class, props, children)
 	if props then
 		for k, v in pairs(props) do
 			if k ~= "Parent" then
-				inst[k] = v
+				-- a Font object (e.g. Inter) goes on FontFace, not the Font enum prop
+				if k == "Font" and typeof(v) == "Font" then
+					inst.FontFace = v
+				else
+					inst[k] = v
+				end
 			end
 		end
 	end
@@ -299,9 +304,11 @@ local THEME = {
 	Good = Color3.fromRGB(80, 220, 130),          -- status dot
 }
 
-local FONT = Enum.Font.Gotham
-local FONT_MED = Enum.Font.GothamMedium
-local FONT_BOLD = Enum.Font.GothamBold
+-- Inter font family (medium-weight base, per request)
+local INTER = "rbxasset://fonts/families/Inter.json"
+local FONT = Font.new(INTER, Enum.FontWeight.Medium)
+local FONT_MED = Font.new(INTER, Enum.FontWeight.Medium)
+local FONT_BOLD = Font.new(INTER, Enum.FontWeight.Bold)
 
 -- Inline-row layout metrics (scaled by the window's UIScale at runtime)
 local ROW_H = 38          -- height of a setting row (compact)

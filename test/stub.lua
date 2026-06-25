@@ -156,6 +156,20 @@ enumMeta = {
 }
 Enum = setmetatable({}, enumMeta)
 
+-- Font / typeof so FontFace (Font.new) assignment works under the stub
+Font = {
+	new = function(family, weight, style)
+		return { _isFont = true, Family = family, Weight = weight, Style = style }
+	end,
+	fromName = function(name, weight, style)
+		return { _isFont = true, Family = name, Weight = weight, Style = style }
+	end,
+}
+function typeof(v)
+	if type(v) == "table" and getmetatable(v) == nil and v._isFont then return "Font" end
+	return type(v)
+end
+
 ----------------------------------------------------------------------
 -- Services + game
 ----------------------------------------------------------------------
