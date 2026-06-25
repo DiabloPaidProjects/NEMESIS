@@ -2187,15 +2187,14 @@ function NEMESIS.Window(opts)
 
 		tab.button = btn
 		tab.label = label
+		-- hover = only the rounded fill (NOT the inner-corner covers), so it reads
+		-- as a soft rounded highlight on every tab instead of a harsh square box;
+		-- the flush squared segment is reserved for the active tab
 		btn.MouseEnter:Connect(function()
-			if activeTab ~= tab then
-				for _, p in ipairs(tab.hlParts) do tween(p, { BackgroundTransparency = 0.86 }, TI.HOVER) end
-			end
+			if activeTab ~= tab then tween(fill, { BackgroundTransparency = 0.85 }, TI.HOVER) end
 		end)
 		btn.MouseLeave:Connect(function()
-			if activeTab ~= tab then
-				for _, p in ipairs(tab.hlParts) do tween(p, { BackgroundTransparency = 1 }, TI.HOVER) end
-			end
+			if activeTab ~= tab then tween(fill, { BackgroundTransparency = 1 }, TI.HOVER) end
 		end)
 		btn.MouseButton1Click:Connect(function() showTab(tab) end)
 		paintTab(tab, false, false)
