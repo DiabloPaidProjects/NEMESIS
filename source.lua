@@ -688,7 +688,7 @@ local function fieldBox(row, frac)
 		Size = UDim2.new(frac or FIELD_FRAC, 0, 0, 28),
 		BackgroundColor3 = THEME.Element,
 		Parent = row,
-	}, { corner(8), stroke(THEME.ElementStroke, 1, 0.35) })
+	}, { corner(8), stroke(THEME.ElementStroke, 1, 0.2) })
 end
 
 ----------------------------------------------------------------------
@@ -1041,7 +1041,7 @@ function Elements.Dropdown(parent, accent, opts)
 		ClipsDescendants = true,
 		Parent = parent,
 	})
-	local listStroke = stroke(THEME.Stroke, 1, 1)
+	local listStroke = stroke(THEME.ElementStroke, 1, 1)
 	local listInner = Create("Frame", {
 		AnchorPoint = Vector2.new(1, 0),
 		Position = UDim2.new(1, -ROW_PAD, 0, 2),
@@ -1101,7 +1101,7 @@ function Elements.Dropdown(parent, accent, opts)
 				Size = UDim2.new(1, -34, 1, 0),
 				Font = FONT,
 				Text = tostring(v),
-				TextColor3 = THEME.SubText,
+				TextColor3 = THEME.Text,
 				TextSize = 13,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				TextTruncate = Enum.TextTruncate.AtEnd,
@@ -1125,7 +1125,7 @@ function Elements.Dropdown(parent, accent, opts)
 				local on = multi and selected[v] or (single == v)
 				local info = animate and TI.FAST or TweenInfo.new(0)
 				tween(ob, { BackgroundTransparency = on and 0.82 or 1 }, info)
-				tween(olabel, { TextColor3 = on and accent or THEME.SubText }, info)
+				tween(olabel, { TextColor3 = on and accent or THEME.Text }, info)
 				if tick then tween(tick, { ImageTransparency = (on and multi) and 0 or 1 }, info) end
 			end
 			ob._paint = paint
@@ -1153,12 +1153,15 @@ function Elements.Dropdown(parent, accent, opts)
 	local DROP_TI = TweenInfo.new(0.3, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 	function control.Toggle(force)
 		open = (force == nil) and (not open) or force
-		local target = open and (math.min(#options, 6) * 33 + 10) or 0
+		-- exact fit: 30px rows + 3px gaps + 5px top/bottom padding
+		local target = open and (math.min(#options, 6) * 33 + 7) or 0
 		tween(listHolder, { Size = UDim2.new(1, 0, 0, target) }, DROP_TI)
 		tween(arrow, { Rotation = open and 180 or 0 }, TI.FAST)
 		tween(field, { BackgroundColor3 = open and THEME.ElementHover or THEME.Element }, TI.FAST)
-		tween(listInner, { BackgroundTransparency = open and 0 or 1 }, DROP_TI)
-		tween(listStroke, { Transparency = open and 0.3 or 1 }, DROP_TI)
+		-- panel + border appear quickly so options are clearly visible while the
+		-- height glides them into view
+		tween(listInner, { BackgroundTransparency = open and 0 or 1 }, TI.FAST)
+		tween(listStroke, { Transparency = open and 0.15 or 1 }, TI.FAST)
 	end
 	function control.Set(v)
 		if multi then
