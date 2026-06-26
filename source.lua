@@ -1526,32 +1526,33 @@ function Elements.ColorPicker(parent, accent, opts)
 			end)
 		end
 
-		local hue = Create("Frame", { Size = UDim2.new(1, 0, 0, 14), Parent = panel }, {
-			corner(7),
+		-- neverlose-style: thin pill bars with round circular draggers
+		local hue = Create("Frame", { Size = UDim2.new(1, 0, 0, 8), Parent = panel }, {
+			corner(4),
 			Create("UIGradient", { Color = hueSequence() }),
 		})
 		hueDot = Create("Frame", {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(h, 0, 0.5, 0),
-			Size = UDim2.new(0, 6, 1, 4),
+			Size = UDim2.new(0, 12, 0, 12),
 			BackgroundColor3 = Color3.new(1, 1, 1),
 			ZIndex = 52,
 			Parent = hue,
-		}, { corner(3), stroke(Color3.new(0, 0, 0), 1, 0.3) })
+		}, { corner(6), stroke(Color3.new(0, 0, 0), 1, 0.35) })
 		bindBarDrag(hue, function(rel) h = rel; syncUI(); commit() end)
 
-		alphaBar = Create("Frame", { Size = UDim2.new(1, 0, 0, 14), BackgroundColor3 = value, Parent = panel }, {
-			corner(7),
+		alphaBar = Create("Frame", { Size = UDim2.new(1, 0, 0, 8), BackgroundColor3 = value, Parent = panel }, {
+			corner(4),
 			Create("UIGradient", { Transparency = numSeq(0, 1) }),
 		})
 		alphaDot = Create("Frame", {
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(1 - alpha, 0, 0.5, 0),
-			Size = UDim2.new(0, 6, 1, 4),
+			Size = UDim2.new(0, 12, 0, 12),
 			BackgroundColor3 = Color3.new(1, 1, 1),
 			ZIndex = 52,
 			Parent = alphaBar,
-		}, { corner(3), stroke(Color3.new(0, 0, 0), 1, 0.3) })
+		}, { corner(6), stroke(Color3.new(0, 0, 0), 1, 0.35) })
 		bindBarDrag(alphaBar, function(rel) alpha = 1 - rel; syncUI(); commit() end)
 
 		local hexRow = Create("Frame", { Size = UDim2.new(1, 0, 0, 26), BackgroundTransparency = 1, Parent = panel })
