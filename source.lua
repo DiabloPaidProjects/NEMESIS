@@ -721,24 +721,168 @@ end
 local Elements = {}
 
 function Elements.Label(parent, accent, text)
+	-- Rayfield-style: text inside a subtle rounded card
+	local holder = Create("Frame", {
+		BackgroundColor3 = THEME.Element,
+		Size = UDim2.new(1, -ROW_PAD * 2, 0, 0),
+		Position = UDim2.new(0, ROW_PAD, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Parent = parent,
+	}, {
+		corner(10),
+		stroke(THEME.Stroke, 1, 0.4),
+		Create("UIPadding", {
+			PaddingLeft = UDim.new(0, 14), PaddingRight = UDim.new(0, 14),
+			PaddingTop = UDim.new(0, 11), PaddingBottom = UDim.new(0, 11),
+		}),
+	})
 	local lbl = Create("TextLabel", {
 		BackgroundTransparency = 1,
-		Size = UDim2.new(1, -ROW_PAD * 2, 0, 0),
+		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
-		Position = UDim2.new(0, ROW_PAD, 0, 0),
 		Font = FONT,
 		Text = tostring((type(text) == "table" and text.text) or text or ""),
-		TextColor3 = THEME.SubText,
+		TextColor3 = THEME.Text,
 		TextSize = 15,
 		TextWrapped = true,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = parent,
+		Parent = holder,
 	})
-	tagSearch(lbl, lbl.Text)
+	tagSearch(holder, lbl.Text)
 	return {
 		Set = function(v) lbl.Text = tostring(v) end,
 		Get = function() return lbl.Text end,
 	}
+end
+
+-- A thin horizontal divider, with an optional centred label
+function Elements.Divider(parent, accent, opts)
+	opts = opts or {}
+	local label = (type(opts) == "table" and (opts.text or opts.title)) or nil
+	local row = Create("Frame", {
+		Size = UDim2.new(1, -ROW_PAD * 2, 0, label and 22 or 12),
+		Position = UDim2.new(0, ROW_PAD, 0, 0),
+		BackgroundTransparency = 1,
+		Parent = parent,
+	})
+	if label then
+		Create("TextLabel", {
+			AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+			Size = UDim2.new(0, 0, 1, 0), AutomaticSize = Enum.AutomaticSize.X,
+			BackgroundColor3 = THEME.Group, BackgroundTransparency = 0,
+			Font = FONT_MED, Text = " " .. tostring(label) .. " ", TextColor3 = THEME.SubText, TextSize = 13,
+			ZIndex = 2, Parent = row,
+		})
+	end
+	Create("Frame", {
+		AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(0.5, 0, 0.5, 0),
+		Size = UDim2.new(1, 0, 0, 1), BackgroundColor3 = THEME.RowDivider, BorderSizePixel = 0,
+		Parent = row,
+	})
+	return { Instance = row }
+end
+
+
+-- neverlose-style listbox: an always-open scrollable list of selectable items
+-- (single or multi). options use the same accent-dot + slide style as dropdowns.
+function Elements.Listbox(parent, accent, opts)
+	opts = opts or {}
+	local options = opts.options or {}
+	local multi = opts.multi and true or false
+	local selected = {}
+	if multi and type(opts.default) == "table" then
+		for _, v in ipairs(opts.default) do selected[v] = true end
+	elseif not multi and opts.default ~= nil then
+		selected[opts.default] = true
+	end
+	local single = (not multi) and opts.default or nil
+	local rows = tonumber(opts.rows) or 4
+
+	if opts.text then
+		Create("TextLabel", {
+			Size = UDim2.new(1, -ROW_PAD * 2, 0, 22), Position = UDim2.new(0, ROW_PAD, 0, 0),
+			BackgroundTransparency = 1, Font = FONT_MED, Text = tostring(opts.text),
+			TextColor3 = THEME.Text, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, Parent = parent,
+		})
+	end
+
+	local box = Create("Frame", {
+		Size = UDim2.new(1, -ROW_PAD * 2, 0, rows * 30 + 8), Position = UDim2.new(0, ROW_PAD, 0, 0),
+		BackgroundColor3 = THEME.Element, Parent = parent,
+	}, { corner(8), stroke(THEME.ElementStroke, 1, 0.3) })
+	local holder = Create("ScrollingFrame", {
+		Size = UDim2.new(1, -8, 1, -8), Position = UDim2.new(0, 4, 0, 4),
+		BackgroundTransparency = 1, BorderSizePixel = 0, ScrollBarThickness = 3,
+		ScrollBarImageColor3 = accent, ScrollBarImageTransparency = 0.3,
+		CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+		ScrollingDirection = Enum.ScrollingDirection.Y, Parent = box,
+	}, { Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 2) }) })
+
+	local control = {}
+	local function listValues()
+		local t = {}
+		for _, v in ipairs(options) do if selected[v] then t[#t + 1] = v end end
+		return t
+	end
+	local function fire()
+		local val = multi and listValues() or single
+		if opts.flag then NEMESIS.Flags[opts.flag] = val end
+		if type(opts.callback) == "function" then pcall(opts.callback, val) end
+	end
+
+	local items = {}
+	local function rebuild()
+		for _, rec in ipairs(items) do rec.btn:Destroy() end
+		items = {}
+		for _, v in ipairs(options) do
+			local ob = Create("TextButton", { Size = UDim2.new(1, 0, 0, 28), BackgroundTransparency = 1, AutoButtonColor = false, Text = "", Parent = holder })
+			local dot = Create("Frame", {
+				AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0), Size = UDim2.new(0, 6, 0, 6),
+				BackgroundColor3 = accent, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = ob,
+			}, { corner(3), Create("UIGradient", { Rotation = 90, Color = ColorSequence.new(accent, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.35)) }) })
+			local lbl = Create("TextLabel", {
+				AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 8, 0.5, 0), Size = UDim2.new(1, -16, 0, 17),
+				BackgroundTransparency = 1, Font = FONT, Text = tostring(v), TextColor3 = THEME.Text, TextTransparency = 0.35,
+				TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, TextTruncate = Enum.TextTruncate.AtEnd, Parent = ob,
+			})
+			local function paint(animate)
+				local on = selected[v] and true or false
+				local info = animate and TI.FAST or TweenInfo.new(0)
+				tween(dot, { BackgroundTransparency = on and 0 or 1 }, info)
+				tween(lbl, { TextTransparency = on and 0 or 0.35, Position = on and UDim2.new(0, 18, 0.5, 0) or UDim2.new(0, 8, 0.5, 0) }, info)
+			end
+			paint(false)
+			ob.MouseEnter:Connect(function() if not selected[v] then tween(lbl, { TextTransparency = 0.1 }, TI.HOVER) end end)
+			ob.MouseLeave:Connect(function() if not selected[v] then tween(lbl, { TextTransparency = 0.35 }, TI.HOVER) end end)
+			ob.MouseButton1Click:Connect(function()
+				if multi then
+					selected[v] = not selected[v] or nil
+				else
+					selected = {}; selected[v] = true; single = v
+				end
+				for _, rec in ipairs(items) do rec.paint(true) end
+				fire()
+			end)
+			items[#items + 1] = { btn = ob, paint = paint }
+		end
+	end
+	rebuild()
+
+	function control.Set(v)
+		if multi then
+			selected = {}
+			if type(v) == "table" then for _, x in ipairs(v) do selected[x] = true end end
+		else
+			selected = {}; selected[v] = true; single = v
+		end
+		for _, rec in ipairs(items) do rec.paint(true) end
+		fire()
+	end
+	function control.Get() return multi and listValues() or single end
+	function control.SetOptions(newOpts) options = newOpts or {}; rebuild() end
+
+	if opts.flag then NEMESIS.Flags[opts.flag] = control.Get() end
+	return control
 end
 
 function Elements.Paragraph(parent, accent, opts)
@@ -1936,6 +2080,8 @@ local function makeSection(host, accent, title)
 	host.ColorPicker = bind("ColorPicker")
 	host.Paragraph = bind("Paragraph")
 	host.Label = function(text) return Elements.Label(body, accent, text) end
+	host.Divider = bind("Divider")
+	host.Listbox = bind("Listbox")
 	return host
 end
 
