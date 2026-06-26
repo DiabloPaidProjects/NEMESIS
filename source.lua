@@ -2262,14 +2262,17 @@ function NEMESIS.Window(opts)
 	})
 	-- segmented tab container: one rounded bordered bar; the active tab fills it
 	-- flush (clipped to the bar's rounded corners), tabs split by hairline dividers
-	local tabBar = Create("Frame", {
+	local tabScale = Create("UIScale", { Scale = 1 })
+	local tabBar = Create("CanvasGroup", {
 		Size = UDim2.new(0, 0, 0, 38),
 		AutomaticSize = Enum.AutomaticSize.X,
 		BackgroundColor3 = THEME.Background,
 		BackgroundTransparency = 0.15,
+		GroupTransparency = 0,
 		ClipsDescendants = true,
 		Parent = tabArea,
 	}, {
+		tabScale,
 		corner(8),
 		stroke(THEME.Stroke, 1, 0.2),
 		Create("UIListLayout", {
@@ -2535,7 +2538,10 @@ function NEMESIS.Window(opts)
 	local function openSearch()
 		if searchOpen then return end
 		searchOpen = true
-		tabBar.Visible = false
+		-- tabs fade + scale out with the same easing the bar comes in with
+		tween(tabBar, { GroupTransparency = 1 }, sExp(0.25))
+		tween(tabScale, { Scale = 0.92 }, sExp(0.3))
+		task.delay(0.26, function() if searchOpen then tabBar.Visible = false end end)
 		searchBar.Visible = true
 		searchBar.BackgroundTransparency = 1
 		searchBar.Size = UDim2.new(0, 400, 0, 44)
@@ -2559,8 +2565,14 @@ function NEMESIS.Window(opts)
 		if searchBarStroke then tween(searchBarStroke, { Transparency = 1 }, sQuint(0.15)) end
 		searchBox.Text = ""
 		runSearch("")
+		-- tabs fade + scale back in
+		tabBar.Visible = true
+		tabBar.GroupTransparency = 1
+		tabScale.Scale = 0.92
+		tween(tabBar, { GroupTransparency = 0 }, sExp(0.35))
+		tween(tabScale, { Scale = 1 }, sExp(0.4))
 		task.delay(0.32, function()
-			if not searchOpen then searchBar.Visible = false; tabBar.Visible = true end
+			if not searchOpen then searchBar.Visible = false end
 		end)
 	end
 	searchBtn.MouseButton1Click:Connect(openSearch)
