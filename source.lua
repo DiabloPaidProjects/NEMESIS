@@ -368,6 +368,27 @@ local function tween(inst, props, info)
 end
 
 ----------------------------------------------------------------------
+-- Accent theme registry (live recolor via Win.SetAccent)
+----------------------------------------------------------------------
+local accentHooks = {}
+-- register a recolor callback fn(newAccent); call it once now with cur if given
+local function onAccent(fn) accentHooks[#accentHooks + 1] = fn end
+-- helper: a lighter shade of an accent (for gradients)
+local function accentLight(c) return c:Lerp(Color3.fromRGB(255, 255, 255), 0.35) end
+-- set a colour property now AND keep it tracking the accent
+local function accentProp(inst, prop, accent)
+	inst[prop] = accent
+	onAccent(function(c) pcall(function() inst[prop] = c end) end)
+	return inst
+end
+-- keep a UIGradient tracking the accent (accent -> lighter)
+local function accentGrad(grad, accent)
+	grad.Color = ColorSequence.new(accent, accentLight(accent))
+	onAccent(function(c) pcall(function() grad.Color = ColorSequence.new(c, accentLight(c)) end) end)
+	return grad
+end
+
+----------------------------------------------------------------------
 -- Mobile / scale
 ----------------------------------------------------------------------
 local IS_MOBILE = false
@@ -986,6 +1007,7 @@ function Elements.Toggle(parent, accent, opts)
 	}, { corner(6), stroke(THEME.ElementStroke, 1, 0.35) })
 	-- fill matches the box corner and never exceeds it, so its corners stay
 	-- curved all through the grow animation (no square clipping)
+	local fillGrad = Create("UIGradient", { Rotation = 90 })
 	local fill = Create("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
@@ -994,13 +1016,9 @@ function Elements.Toggle(parent, accent, opts)
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Parent = box,
-	}, {
-		corner(6),
-		Create("UIGradient", {
-			Rotation = 90,
-			Color = ColorSequence.new(accent, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.35)),
-		}),
-	})
+	}, { corner(6), fillGrad })
+	accentProp(fill, "BackgroundColor3", accent)
+	accentGrad(fillGrad, accent)
 	local check
 	local checkSpec = resolveIcon("check")
 	if checkSpec then
@@ -1102,16 +1120,14 @@ function Elements.Slider(parent, accent, opts)
 		BackgroundColor3 = THEME.ElementStroke,
 		Parent = cluster,
 	}, { corner(3) })
+	local fillGrad = Create("UIGradient", {})
 	local fill = Create("Frame", {
 		Size = UDim2.new((value - min) / (max - min), 0, 1, 0),
 		BackgroundColor3 = accent,
 		Parent = bar,
-	}, {
-		corner(3),
-		Create("UIGradient", {
-			Color = ColorSequence.new(accent, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.35)),
-		}),
-	})
+	}, { corner(3), fillGrad })
+	accentProp(fill, "BackgroundColor3", accent)
+	accentGrad(fillGrad, accent)
 	local handle = Create("Frame", {
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new((value - min) / (max - min), 0, 0.5, 0),
@@ -1120,6 +1136,7 @@ function Elements.Slider(parent, accent, opts)
 		ZIndex = 2,
 		Parent = bar,
 	}, { corner(7), stroke(THEME.Background, 2, 0) })
+	accentProp(handle, "BackgroundColor3", accent)
 	-- tall invisible grab strip so the thin bar is easy to drag anywhere
 	local hit = Create("TextButton", {
 		AnchorPoint = Vector2.new(1, 0.5),
@@ -2014,7 +2031,7 @@ local function makeSection(host, accent, title)
 			LayoutOrder = 1,
 			Parent = card,
 		}, { padXY(ROW_PAD, 0) })
-		Create("TextLabel", {
+		accentProp(Create("TextLabel", {
 			BackgroundTransparency = 1,
 			AnchorPoint = Vector2.new(0, 0.5),
 			Position = UDim2.new(0, 0, 0.5, 0),
@@ -2025,7 +2042,7 @@ local function makeSection(host, accent, title)
 			TextSize = 13,
 			TextXAlignment = Enum.TextXAlignment.Left,
 			Parent = header,
-		})
+		}), "TextColor3", accent)
 		local chev
 		local chevSpec = resolveIcon("chevron-up")
 		if chevSpec then
@@ -2856,7 +2873,7 @@ function NEMESIS.Window(opts)
 				Text = "",
 				Parent = container,
 			}, { corner(8), stroke(Color3.fromRGB(78, 56, 140), 1, 0.35), padXY(12, 0) })
-			Create("TextLabel", {
+			accentProp(Create("TextLabel", {
 				AnchorPoint = Vector2.new(0, 0.5),
 				Position = UDim2.new(0, 0, 0.5, 0),
 				Size = UDim2.new(1, -22, 1, 0),
@@ -2867,7 +2884,7 @@ function NEMESIS.Window(opts)
 				TextSize = 13,
 				TextXAlignment = Enum.TextXAlignment.Left,
 				Parent = header,
-			})
+			}), "TextColor3", accent)
 			local chev
 			local chevSpec = resolveIcon("chevron-down")
 			if chevSpec then
@@ -2879,6 +2896,7 @@ function NEMESIS.Window(opts)
 					ImageColor3 = accent,
 					Parent = header,
 				})
+				accentProp(chev, "ImageColor3", accent)
 				applyIcon(chev, chevSpec)
 			else
 				chev = Create("TextLabel", {
@@ -3184,6 +3202,19 @@ function NEMESIS.Window(opts)
 	function Win.SetLogoColor(c)
 		logoColor = c or logoColor
 		if logoImage then logoImage.ImageColor3 = logoColor end
+	end
+
+	-- live-recolor the whole menu's accent (Win.SetAccent(Color3))
+	function Win.SetAccent(c)
+		if not c then return end
+		accent = c
+		THEME.Accent = c
+		for _, fn in ipairs(accentHooks) do pcall(fn, c) end
+		-- re-apply the dynamic accent text (active sub-tab + breadcrumb)
+		if activeTab and activeTab.activePage then
+			pcall(function() applyPageVisual(activeTab, activeTab.activePage, false) end)
+			pcall(function() setCrumb(activeTab, activeTab.activePage) end)
+		end
 	end
 
 	Win.Instance = root
