@@ -1797,7 +1797,7 @@ function Elements.ColorPicker(parent, accent, opts)
 		backdrop.MouseButton1Click:Connect(function() openPanel(false) end)
 		local panelScale = Create("UIScale", { Scale = 1 })
 		panel = Create("CanvasGroup", {
-			Name = "ColorPanel", Size = UDim2.new(0, 282, 0, 384), BackgroundColor3 = THEME.Group,
+			Name = "ColorPanel", Size = UDim2.new(0, 282, 0, 392), BackgroundColor3 = THEME.Group,
 			GroupTransparency = 1, Visible = false, ZIndex = 50001, Parent = screenGui,
 		}, {
 			corner(14), stroke(THEME.ElementStroke, 1, 0.35), panelScale,
@@ -1894,13 +1894,13 @@ function Elements.ColorPicker(parent, accent, opts)
 		-- scrollable so presets + any number of saved colours fit (right-click a
 		-- saved colour to remove it)
 		local gridWrap = Create("ScrollingFrame", {
-			Size = UDim2.new(1, 0, 0, 98), BackgroundTransparency = 1, BorderSizePixel = 0,
+			Size = UDim2.new(1, 0, 0, 104), BackgroundTransparency = 1, BorderSizePixel = 0,
 			ScrollBarThickness = 3, ScrollBarImageColor3 = accent, ScrollBarImageTransparency = 0.3,
 			CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
 			ScrollingDirection = Enum.ScrollingDirection.Y, LayoutOrder = 6, Parent = content,
 		})
-		local grid = Create("Frame", { Size = UDim2.new(1, -6, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Parent = gridWrap }, {
-			Create("UIGridLayout", { CellSize = UDim2.new(0, 36, 0, 26), CellPadding = UDim2.new(0, 6, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+		local grid = Create("Frame", { Size = UDim2.new(1, -10, 0, 0), Position = UDim2.new(0, 2, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Parent = gridWrap }, {
+			Create("UIGridLayout", { CellSize = UDim2.new(0, 34, 0, 26), CellPadding = UDim2.new(0, 6, 0, 6), HorizontalAlignment = Enum.HorizontalAlignment.Center, SortOrder = Enum.SortOrder.LayoutOrder }),
 		})
 		local function swatchTile(color, order, kind, savedIdx)
 			local t = Create("TextButton", {

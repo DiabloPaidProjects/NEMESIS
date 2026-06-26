@@ -190,6 +190,9 @@ s_logo.Dropdown({ text = "Logo preset", options = { "Purple", "Red", "Pink", "Gr
 		}
 		Win.SetLogoColor(map[v])
 	end })
+s_logo.ColorPicker({ text = "Logo gradient", gradient = true, default = Color3.fromRGB(170, 100, 255), gradientDefault = Color3.fromRGB(255, 70, 160), flag = "sc_logo_grad",
+	callback = function(colors) if type(colors) == "table" then Win.SetLogoGradient(colors[1], colors[2]) end end })
+s_logo.Button({ text = "Reset logo to solid", button = "Reset", callback = function() Win.SetLogoColor(Color3.fromRGB(150, 85, 255)) end })
 
 local s_note = Cfg.Section("NOTIFICATIONS")
 s_note.Button({ text = "Short notification", button = "2s", callback = function() notify("Heads up", "This one lasts two seconds.", 2) end })
