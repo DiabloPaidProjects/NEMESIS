@@ -512,15 +512,15 @@ local function ensureRoot()
 
 	notifyHolder = Create("Frame", {
 		Name = "Notifications",
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -20, 1, -20),
-		Size = UDim2.new(0, 290, 1, -40),
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, -20, 0, 20),
+		Size = UDim2.new(0, 300, 1, -40),
 		BackgroundTransparency = 1,
 		Parent = screenGui,
 	}, {
 		Create("UIListLayout", {
 			HorizontalAlignment = Enum.HorizontalAlignment.Right,
-			VerticalAlignment = Enum.VerticalAlignment.Bottom,
+			VerticalAlignment = Enum.VerticalAlignment.Top,
 			SortOrder = Enum.SortOrder.LayoutOrder,
 			Padding = UDim.new(0, 8),
 		}),
@@ -537,7 +537,7 @@ function NEMESIS.Notify(opts)
 
 	local accent = opts.accent or THEME.Accent
 	local iconSpec = resolveIcon(opts.icon)
-	local textInset = iconSpec and 34 or 0
+	local SLIDE = TweenInfo.new(0.45, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
 
 	local card = Create("Frame", {
 		Name = "Notif",
@@ -545,73 +545,77 @@ function NEMESIS.Notify(opts)
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(1, 40, 0, 0),
+		Position = UDim2.new(1, 60, 0, 0),
+		ClipsDescendants = true,
 		Parent = notifyHolder,
 	}, {
 		corner(10),
 		stroke(THEME.ElementStroke, 1, 0.1),
-		padding(12),
+		Create("UIPadding", {
+			PaddingLeft = UDim.new(0, 13), PaddingRight = UDim.new(0, 13),
+			PaddingTop = UDim.new(0, 12), PaddingBottom = UDim.new(0, 12),
+		}),
+		Create("UIListLayout", { SortOrder = Enum.SortOrder.LayoutOrder, Padding = UDim.new(0, 8) }),
 	})
 	local notifStroke = card:FindFirstChildOfClass("UIStroke")
 
+	-- head: optional icon + title
+	local head = Create("Frame", { Size = UDim2.new(1, 0, 0, 18), BackgroundTransparency = 1, LayoutOrder = 1, Parent = card })
+	local img
+	local titleLeft = 0
 	if iconSpec then
-		local img = Create("ImageLabel", {
-			BackgroundTransparency = 1,
-			Position = UDim2.new(0, 0, 0, 1),
-			Size = UDim2.new(0, 22, 0, 22),
-			ImageColor3 = accent,
-			ImageTransparency = 1,
-			Parent = card,
+		img = Create("ImageLabel", {
+			AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(0, 18, 0, 18),
+			BackgroundTransparency = 1, ImageColor3 = accent, ImageTransparency = 1, Parent = head,
 		})
 		applyIcon(img, iconSpec)
+		titleLeft = 26
 	end
-
 	local title = Create("TextLabel", {
-		Name = "Title",
-		BackgroundTransparency = 1,
-		Position = UDim2.new(0, textInset, 0, 0),
-		Size = UDim2.new(1, -textInset, 0, 16),
-		Font = FONT_BOLD,
-		Text = tostring(opts.title or "Notification"),
-		TextColor3 = accent,
-		TextSize = 16,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextTransparency = 1,
-		Parent = card,
-	})
-	local content = Create("TextLabel", {
-		Name = "Content",
-		BackgroundTransparency = 1,
-		Position = UDim2.new(0, textInset, 0, 20),
-		Size = UDim2.new(1, -textInset, 0, 0),
-		AutomaticSize = Enum.AutomaticSize.Y,
-		Font = FONT,
-		Text = tostring(opts.content or ""),
-		TextColor3 = THEME.Text,
-		TextSize = 15,
-		TextWrapped = true,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		TextTransparency = 1,
-		Parent = card,
+		Name = "Title", AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, titleLeft, 0.5, 0),
+		Size = UDim2.new(1, -titleLeft, 1, 0), Font = FONT_BOLD, Text = tostring(opts.title or "Notification"),
+		TextColor3 = accent, TextSize = 16, TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, Parent = head,
 	})
 
-	tween(card, { Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 0 }, TI.EXP)
-	tween(title, { TextTransparency = 0 }, TI.EXP)
-	tween(content, { TextTransparency = 0 }, TI.EXP)
-	for _, c in ipairs(card:GetChildren()) do
-		if c:IsA("ImageLabel") then tween(c, { ImageTransparency = 0 }, TI.EXP) end
+	local content
+	if opts.content and opts.content ~= "" then
+		content = Create("TextLabel", {
+			Name = "Content", BackgroundTransparency = 1, Size = UDim2.new(1, 0, 0, 0), AutomaticSize = Enum.AutomaticSize.Y,
+			Font = FONT, Text = tostring(opts.content), TextColor3 = THEME.Text, TextSize = 15, TextWrapped = true,
+			TextXAlignment = Enum.TextXAlignment.Left, TextTransparency = 1, LayoutOrder = 2, Parent = card,
+		})
 	end
+
+	-- Rayfield-style timer bar that drains over the duration
+	local track = Create("Frame", {
+		Name = "Track", Size = UDim2.new(1, 0, 0, 3), BackgroundColor3 = THEME.ElementStroke,
+		BackgroundTransparency = 1, LayoutOrder = 3, Parent = card,
+	}, { corner(2) })
+	local progress = Create("Frame", {
+		Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = accent, BackgroundTransparency = 1, BorderSizePixel = 0, Parent = track,
+	}, { corner(2), Create("UIGradient", { Color = ColorSequence.new(accent, accent:Lerp(Color3.fromRGB(255, 255, 255), 0.35)) }) })
+
+	-- slide + fade in
+	tween(card, { Position = UDim2.new(0, 0, 0, 0), BackgroundTransparency = 0 }, SLIDE)
+	tween(title, { TextTransparency = 0 }, SLIDE)
+	if content then tween(content, { TextTransparency = 0 }, SLIDE) end
+	if img then tween(img, { ImageTransparency = 0 }, SLIDE) end
+	tween(track, { BackgroundTransparency = 0.45 }, SLIDE)
+	tween(progress, { BackgroundTransparency = 0 }, SLIDE)
 
 	local duration = tonumber(opts.duration) or 4
+	-- drain the timer bar
+	tween(progress, { Size = UDim2.new(0, 0, 1, 0) }, TweenInfo.new(duration, Enum.EasingStyle.Linear))
+
 	task.delay(duration, function()
 		if not card or not card.Parent then return end
-		tween(card, { Position = UDim2.new(1, 40, 0, 0), BackgroundTransparency = 1 }, TI.EXP)
-		if notifStroke then tween(notifStroke, { Transparency = 1 }, TI.EXP) end
-		tween(title, { TextTransparency = 1 }, TI.EXP)
-		tween(content, { TextTransparency = 1 }, TI.EXP)
-		for _, c in ipairs(card:GetChildren()) do
-			if c:IsA("ImageLabel") then tween(c, { ImageTransparency = 1 }, TI.EXP) end
-		end
+		tween(card, { Position = UDim2.new(1, 60, 0, 0), BackgroundTransparency = 1 }, SLIDE)
+		if notifStroke then tween(notifStroke, { Transparency = 1 }, SLIDE) end
+		tween(title, { TextTransparency = 1 }, SLIDE)
+		if content then tween(content, { TextTransparency = 1 }, SLIDE) end
+		if img then tween(img, { ImageTransparency = 1 }, SLIDE) end
+		tween(track, { BackgroundTransparency = 1 }, SLIDE)
+		tween(progress, { BackgroundTransparency = 1 }, SLIDE)
 		task.delay(0.5, function() if card then card:Destroy() end end)
 	end)
 end
