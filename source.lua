@@ -698,6 +698,23 @@ local function fieldBox(row, frac)
 	}, { corner(8), stroke(THEME.ElementStroke, 1, 0.2) })
 end
 
+-- Make any TextBox grow its (offset-width) field to fit the typed text, between
+-- minW..maxW, then clip so the front scrolls off instead of spilling outside.
+-- Sizes from the real text only (an empty box stays at minW; placeholder ignored).
+local function growBox(field, box, minW, maxW, pad)
+	field.ClipsDescendants = true
+	local function fit()
+		local tb = 0
+		if box.Text ~= "" then pcall(function() tb = box.TextBounds.X end) end
+		local y = field.Size.Y
+		field.Size = UDim2.new(0, math.clamp(tb + pad, minW, maxW), y.Scale, y.Offset)
+	end
+	box:GetPropertyChangedSignal("Text"):Connect(fit)
+	box:GetPropertyChangedSignal("TextBounds"):Connect(fit)
+	fit()
+	return fit
+end
+
 ----------------------------------------------------------------------
 -- Element factories: (parent, accent, opts) -> control { Set, Get }
 ----------------------------------------------------------------------
@@ -1329,16 +1346,7 @@ function Elements.Input(parent, accent, opts)
 		ClearTextOnFocus = opts.clearOnFocus and true or false,
 		Parent = clip,
 	})
-	local function fitWidth()
-		-- size from the actual text only; an empty box stays at MIN_W (the
-		-- placeholder must not widen it)
-		local tb = 0
-		if box.Text ~= "" then pcall(function() tb = box.TextBounds.X end) end
-		field.Size = UDim2.new(0, math.clamp(tb + 22, MIN_W, MAX_W), 0, 28)
-	end
-	box:GetPropertyChangedSignal("Text"):Connect(fitWidth)
-	box:GetPropertyChangedSignal("TextBounds"):Connect(fitWidth)
-	fitWidth()
+	growBox(field, box, MIN_W, MAX_W, 22)
 
 	local control = {}
 	function control.Set(v) box.Text = tostring(v) end
@@ -1610,7 +1618,8 @@ function Elements.ColorPicker(parent, accent, opts)
 		hexBox = Create("TextBox", {
 			Position = UDim2.new(0, 40, 0, 0), Size = UDim2.new(1, -90, 1, 0),
 			BackgroundColor3 = THEME.Element, Font = FONT, Text = "#FFFFFF",
-			TextColor3 = THEME.Text, TextSize = 15, Parent = hexRow,
+			TextColor3 = THEME.Text, TextSize = 15, ClipsDescendants = true,
+			TextTruncate = Enum.TextTruncate.AtEnd, Parent = hexRow,
 		}, { corner(6), stroke(THEME.Stroke, 1, 0.3), padding(6) })
 		pctLabel = Create("TextLabel", {
 			AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 44, 1, 0),
@@ -2085,6 +2094,8 @@ function NEMESIS.Window(opts)
 		ClearTextOnFocus = false,
 		Parent = searchPill,
 	})
+	-- search pill grows left with the query (capped), then clips
+	growBox(searchPill, searchBox, searchW, searchW + 130, hasSearchIcon and 48 or 26)
 
 	--------------------------------------------------------------------
 	-- Body: sidebar (with footer) | content (header + pages)
