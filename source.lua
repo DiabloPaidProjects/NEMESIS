@@ -1578,7 +1578,7 @@ function Elements.ColorPicker(parent, accent, opts)
 		})
 		backdrop.MouseButton1Click:Connect(function() openPanel(false) end)
 		panel = Create("CanvasGroup", {
-			Name = "ColorPanel", Size = UDim2.new(0, 250, 0, 360), BackgroundColor3 = THEME.Group,
+			Name = "ColorPanel", Size = UDim2.new(0, 300, 0, 432), BackgroundColor3 = THEME.Group,
 			GroupTransparency = 1, Visible = false, ZIndex = 50001, Parent = screenGui,
 		}, {
 			corner(14), stroke(THEME.Stroke, 1, 0), padding(10),
@@ -1622,7 +1622,7 @@ function Elements.ColorPicker(parent, accent, opts)
 		slotSeg.Parent = slotRow
 
 		-- SV square
-		local sv = Create("Frame", { Size = UDim2.new(1, 0, 0, 120), BackgroundColor3 = Color3.fromHSV(cur().h, 1, 1), LayoutOrder = 3, Parent = panel }, { corner(6) })
+		local sv = Create("Frame", { Size = UDim2.new(1, 0, 0, 150), BackgroundColor3 = Color3.fromHSV(cur().h, 1, 1), LayoutOrder = 3, Parent = panel }, { corner(6) })
 		svBase = sv
 		Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(1, 1, 1), Parent = sv }, { corner(6), Create("UIGradient", { Transparency = numSeq(0, 1) }) })
 		Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(0, 0, 0), Parent = sv }, { corner(6), Create("UIGradient", { Rotation = 90, Transparency = numSeq(1, 0) }) })
@@ -1665,22 +1665,33 @@ function Elements.ColorPicker(parent, accent, opts)
 			Color3.fromRGB(150, 85, 255), Color3.fromRGB(255, 90, 200), Color3.fromRGB(255, 255, 255),
 			Color3.fromRGB(160, 160, 170), Color3.fromRGB(60, 60, 70), Color3.fromRGB(15, 15, 20),
 		}
-		local gridWrap = Create("Frame", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, LayoutOrder = 6, Parent = panel })
-		local grid = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Parent = gridWrap }, {
-			Create("UIGridLayout", { CellSize = UDim2.new(0, 28, 0, 26), CellPadding = UDim2.new(0, 6, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+		-- scrollable so presets + any number of saved colours fit (right-click a
+		-- saved colour to remove it)
+		local gridWrap = Create("ScrollingFrame", {
+			Size = UDim2.new(1, 0, 0, 102), BackgroundTransparency = 1, BorderSizePixel = 0,
+			ScrollBarThickness = 3, ScrollBarImageColor3 = accent, ScrollBarImageTransparency = 0.3,
+			CanvasSize = UDim2.new(0, 0, 0, 0), AutomaticCanvasSize = Enum.AutomaticSize.Y,
+			ScrollingDirection = Enum.ScrollingDirection.Y, LayoutOrder = 6, Parent = panel,
 		})
-		local function swatchTile(color, order, isAdd)
+		local grid = Create("Frame", { Size = UDim2.new(1, -6, 0, 0), AutomaticSize = Enum.AutomaticSize.Y, BackgroundTransparency = 1, Parent = gridWrap }, {
+			Create("UIGridLayout", { CellSize = UDim2.new(0, 40, 0, 30), CellPadding = UDim2.new(0, 6, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+		})
+		local function swatchTile(color, order, kind, savedIdx)
 			local t = Create("TextButton", {
-				BackgroundColor3 = isAdd and THEME.Element or color, AutoButtonColor = false, Text = isAdd and "+" or "",
-				Font = FONT_BOLD, TextColor3 = THEME.SubText, TextSize = 16, LayoutOrder = order, Parent = grid,
+				BackgroundColor3 = (kind == "add") and THEME.Element or color, AutoButtonColor = false,
+				Text = (kind == "add") and "+" or "", Font = FONT_BOLD, TextColor3 = THEME.SubText, TextSize = 18,
+				LayoutOrder = order, Parent = grid,
 			}, { corner(6), stroke(THEME.ElementStroke, 1, 0.4) })
 			t.MouseButton1Click:Connect(function()
-				if isAdd then
+				if kind == "add" then
 					table.insert(saved, slotColor(active)); rebuildSaved()
 				else
 					setColor(color)
 				end
 			end)
+			if kind == "saved" then
+				t.MouseButton2Click:Connect(function() table.remove(saved, savedIdx); rebuildSaved() end)
+			end
 			return t
 		end
 		rebuildSaved = function()
@@ -1688,9 +1699,9 @@ function Elements.ColorPicker(parent, accent, opts)
 				if c:IsA("TextButton") then c:Destroy() end
 			end
 			local order = 0
-			for _, c in ipairs(PRESETS) do order = order + 1; swatchTile(c, order) end
-			for _, c in ipairs(saved) do order = order + 1; swatchTile(c, order) end
-			order = order + 1; swatchTile(nil, order, true)
+			for _, c in ipairs(PRESETS) do order = order + 1; swatchTile(c, order, "preset") end
+			for i, c in ipairs(saved) do order = order + 1; swatchTile(c, order, "saved", i) end
+			order = order + 1; swatchTile(nil, order, "add")
 		end
 		rebuildSaved()
 
@@ -1731,10 +1742,10 @@ function Elements.ColorPicker(parent, accent, opts)
 		if opened then
 			if _ddCurrent and _ddCurrent ~= cpHandle then _ddCurrent.close() end
 			_ddCurrent = cpHandle
-			local tx, ty = 0.5 * 1920 - 125, 0.5 * 1080 - 180
+			local tx, ty = 0.5 * 1920 - 150, 0.5 * 1080 - 216
 			pcall(function()
 				local p = sw1.AbsolutePosition
-				tx, ty = p.X - 200, p.Y + 30
+				tx, ty = p.X - 258, p.Y + 30
 			end)
 			backdrop.Visible = true
 			panel.Visible = true
