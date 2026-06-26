@@ -2231,7 +2231,7 @@ function NEMESIS.Window(opts)
 	end
 
 	-- wordmark beside the logo
-	local wordmark = Create("TextLabel", {
+	Create("TextLabel", {
 		Position = UDim2.new(0, 64, 0.5, 0),
 		AnchorPoint = Vector2.new(0, 0.5),
 		Size = UDim2.new(0, 140, 1, 0),
@@ -2401,23 +2401,6 @@ function NEMESIS.Window(opts)
 	})
 	-- search pill grows left with the query (capped), then clips
 	growBox(searchPill, searchBox, searchW, searchW + 130, hasSearchIcon and 48 or 26)
-
-	-- keep the top bar usable when the window is resized small: drop the wordmark,
-	-- then the search box, handing the freed width to the centered tabs
-	local function layoutTopbar()
-		local w = topbar.AbsoluteSize.X
-		if w <= 0 then w = W end
-		local showWord = w >= 560
-		local showSearch = w >= 720
-		wordmark.Visible = showWord
-		searchPill.Visible = showSearch
-		local left = showWord and 196 or 70
-		local right = showSearch and 320 or 78
-		tabArea.Position = UDim2.new(0, left, 0.5, 0)
-		tabArea.Size = UDim2.new(1, -(left + right), 1, 0)
-	end
-	layoutTopbar()
-	topbar:GetPropertyChangedSignal("AbsoluteSize"):Connect(layoutTopbar)
 
 	-- Body: sidebar (with footer) | content (header + pages)
 	local body = Create("Frame", {
@@ -2993,7 +2976,9 @@ function NEMESIS.Window(opts)
 	end
 
 	-- resize grip (bottom-right)
-	local minW = IS_MOBILE and 420 or 640
+	-- minimum size keeps the whole top bar (logo, title, tabs, search, buttons)
+	-- visible; below this the centred tabs would start to overlap
+	local minW = IS_MOBILE and 480 or 820
 	local minH = 380
 	-- SIRIUS X resize handle: a large invisible hit area + the curved corner icon
 	local resizeGrip = Create("ImageButton", {
