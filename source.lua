@@ -1634,10 +1634,11 @@ function Elements.ColorPicker(parent, accent, opts)
 		svBase = sv
 		Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(1, 1, 1), Parent = sv }, { corner(8), Create("UIGradient", { Transparency = numSeq(0, 1) }) })
 		Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(0, 0, 0), Parent = sv }, { corner(8), Create("UIGradient", { Rotation = 90, Transparency = numSeq(1, 0) }) })
+		-- neverlose-style: transparent centre (shows the picked colour) + white ring
 		svDot = Create("Frame", {
-			AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(cur().s, 0, 1 - cur().v, 0), Size = UDim2.new(0, 10, 0, 10),
-			BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 52, Parent = sv,
-		}, { corner(5), stroke(Color3.new(0, 0, 0), 1, 0.3) })
+			AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(cur().s, 0, 1 - cur().v, 0), Size = UDim2.new(0, 13, 0, 13),
+			BackgroundColor3 = Color3.new(1, 1, 1), BackgroundTransparency = 1, ZIndex = 52, Parent = sv,
+		}, { corner(7), stroke(Color3.new(1, 1, 1), 2, 0) })
 		local svHit = Create("TextButton", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Text = "", ZIndex = 53, Parent = sv })
 		do
 			local dragging = false
