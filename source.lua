@@ -1738,7 +1738,7 @@ function Elements.ColorPicker(parent, accent, opts)
 	local control = {}
 	local panel, svBase, svDot, hueDot, alphaBar, alphaDot, hexBox, pctLabel
 	local headSwatch, headHex, slotRow, setModeVisual, setSlotVisual, rebuildSaved
-	local cpScale
+	local cpScale, cpOpenPos
 	local backdrop, openPanel
 	local cpHandle = {}
 	local opened = false
@@ -1808,7 +1808,7 @@ function Elements.ColorPicker(parent, accent, opts)
 		backdrop.MouseButton1Click:Connect(function() openPanel(false) end)
 		local panelScale = Create("UIScale", { Scale = 1 })
 		panel = Create("CanvasGroup", {
-			Name = "ColorPanel", Size = UDim2.new(0, 282, 0, 392), BackgroundColor3 = THEME.Group,
+			Name = "ColorPanel", AnchorPoint = Vector2.new(0.5, 0.5), Size = UDim2.new(0, 282, 0, 392), BackgroundColor3 = THEME.Group,
 			GroupTransparency = 1, Visible = false, ZIndex = 50001, Parent = screenGui,
 		}, {
 			corner(14), stroke(THEME.ElementStroke, 1, 0.35), panelScale,
@@ -1979,26 +1979,30 @@ function Elements.ColorPicker(parent, accent, opts)
 		if opened then
 			if _ddCurrent and _ddCurrent ~= cpHandle then _ddCurrent.close() end
 			_ddCurrent = cpHandle
-			local tx, ty = 0.5 * 1920 - 141, 0.5 * 1080 - 192
+			-- centre point of the panel (centre-anchored so it pops from its middle)
+			local cx, cy = 0.5 * 1920, 0.5 * 1080
 			pcall(function()
 				local p = sw1.AbsolutePosition
-				tx, ty = p.X - 240, p.Y + 30
+				cx, cy = p.X - 240 + 141, p.Y + 30 + 196
 			end)
-			local CP_OPEN = TweenInfo.new(0.26, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			cpOpenPos = Vector2.new(cx, cy)
+			local CP_OPEN = TweenInfo.new(0.32, Enum.EasingStyle.Quint, Enum.EasingDirection.Out)
+			local CP_POP = TweenInfo.new(0.42, Enum.EasingStyle.Back, Enum.EasingDirection.Out)
 			backdrop.Visible = true
 			panel.Visible = true
 			panel.GroupTransparency = 1
-			panel.Position = UDim2.fromOffset(tx, ty + 14)
-			if cpScale then cpScale.Scale = 0.94 end
-			tween(panel, { GroupTransparency = 0, Position = UDim2.fromOffset(tx, ty) }, CP_OPEN)
-			if cpScale then tween(cpScale, { Scale = 1 }, CP_OPEN) end
+			panel.Position = UDim2.fromOffset(cx, cy + 16)
+			if cpScale then cpScale.Scale = 0.9 end
+			tween(panel, { GroupTransparency = 0, Position = UDim2.fromOffset(cx, cy) }, CP_OPEN)
+			if cpScale then tween(cpScale, { Scale = 1 }, CP_POP) end
 		else
 			if _ddCurrent == cpHandle then _ddCurrent = nil end
-			local CP_CLOSE = TweenInfo.new(0.2, Enum.EasingStyle.Quint, Enum.EasingDirection.In)
+			local CP_CLOSE = TweenInfo.new(0.24, Enum.EasingStyle.Quad, Enum.EasingDirection.Out)
 			backdrop.Visible = false
-			tween(panel, { GroupTransparency = 1 }, CP_CLOSE)
-			if cpScale then tween(cpScale, { Scale = 0.94 }, CP_CLOSE) end
-			task.delay(0.22, function() if not opened and panel then panel.Visible = false end end)
+			local downY = (cpOpenPos and cpOpenPos.Y or 0) + 12
+			tween(panel, { GroupTransparency = 1, Position = UDim2.fromOffset(cpOpenPos and cpOpenPos.X or 0, downY) }, CP_CLOSE)
+			if cpScale then tween(cpScale, { Scale = 0.9 }, CP_CLOSE) end
+			task.delay(0.26, function() if not opened and panel then panel.Visible = false end end)
 		end
 	end
 	cpHandle.close = function() openPanel(false) end
