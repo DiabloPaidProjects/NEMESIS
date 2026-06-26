@@ -44,11 +44,20 @@ local function newInstance(className)
 end
 
 local function signal()
-	return {
-		Connect = function() return { Disconnect = function() end, Connected = true } end,
-		Once = function() return { Disconnect = function() end } end,
+	local conns = {}
+	local s
+	s = {
+		Connect = function(_, fn)
+			conns[fn] = true
+			return { Disconnect = function() conns[fn] = nil end, Connected = true }
+		end,
+		Once = function(_, fn) conns[fn] = true; return { Disconnect = function() conns[fn] = nil end } end,
 		Wait = function() end,
+		Fire = function(_, ...)
+			for fn in pairs(conns) do pcall(fn, ...) end
+		end,
 	}
+	return s
 end
 
 METHODS = {

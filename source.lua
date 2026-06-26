@@ -1466,97 +1466,169 @@ end
 ----------------------------------------------------------------------
 function Elements.ColorPicker(parent, accent, opts)
 	opts = opts or {}
-	local value = opts.default or Color3.fromRGB(255, 255, 255)
-	local alpha = tonumber(opts.transparency) or 0 -- 0 = opaque, 1 = clear
-	local h, s, v = value:ToHSV()
+	-- two colour slots: slot 1 is the colour (single mode) / first gradient colour,
+	-- slot 2 is the second gradient colour. each holds h,s,v + alpha.
+	local function slotFrom(color, a)
+		local hh, ss, vv = (color or Color3.fromRGB(255, 255, 255)):ToHSV()
+		return { h = hh, s = ss, v = vv, alpha = tonumber(a) or 0 }
+	end
+	local slots = {
+		slotFrom(opts.default, opts.transparency),
+		slotFrom(opts.gradientDefault or Color3.fromRGB(0, 0, 0), opts.transparency2 or opts.transparency),
+	}
+	local isGradient = opts.gradient and true or false
+	local active = 1
+	local saved = {}
+	local function cur() return slots[active] end
+	local function slotColor(i) return Color3.fromHSV(slots[i].h, slots[i].s, slots[i].v) end
 
 	local row = newRow(parent, ROW_H)
-	rowText(row, opts.text, opts.desc, 0, 52)
-	local swatch = Create("TextButton", {
-		AnchorPoint = Vector2.new(1, 0.5),
-		Position = UDim2.new(1, 0, 0.5, 0),
-		Size = UDim2.new(0, 40, 0, 22),
-		BackgroundColor3 = value,
-		Text = "",
-		AutoButtonColor = false,
-		Parent = row,
+	rowText(row, opts.text, opts.desc, 0, 76)
+
+	local sw1 = Create("TextButton", {
+		AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0),
+		Size = UDim2.new(0, 40, 0, 22), BackgroundColor3 = slotColor(1),
+		Text = "", AutoButtonColor = false, Parent = row,
 	}, { corner(6), stroke(THEME.Stroke, 1, 0.2) })
+	local sw2 = Create("TextButton", {
+		AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, -26, 0.5, 0),
+		Size = UDim2.new(0, 22, 0, 22), BackgroundColor3 = slotColor(2),
+		Text = "", AutoButtonColor = false, Visible = false, Parent = row,
+	}, { corner(6), stroke(THEME.Stroke, 1, 0.2) })
+	local function layoutSwatches()
+		if isGradient then
+			sw2.Visible = true
+			sw1.Size = UDim2.new(0, 22, 0, 22)
+			sw2.Position = UDim2.new(1, -26, 0.5, 0)
+		else
+			sw2.Visible = false
+			sw1.Size = UDim2.new(0, 40, 0, 22)
+		end
+	end
+	layoutSwatches()
 
 	local control = {}
 	local panel, svBase, svDot, hueDot, alphaBar, alphaDot, hexBox, pctLabel
+	local headSwatch, headHex, slotRow, setModeVisual, setSlotVisual, rebuildSaved
 	local backdrop, openPanel
 	local cpHandle = {}
 	local opened = false
 
-	local function colorNow() return Color3.fromHSV(h, s, v) end
-	local function syncUI()
-		value = colorNow()
-		swatch.BackgroundColor3 = value
-		if svBase then svBase.BackgroundColor3 = Color3.fromHSV(h, 1, 1) end
-		if svDot then svDot.Position = UDim2.new(s, 0, 1 - v, 0) end
-		if hueDot then hueDot.Position = UDim2.new(h, 0, 0.5, 0) end
-		if alphaBar then alphaBar.BackgroundColor3 = value end
-		if alphaDot then alphaDot.Position = UDim2.new(1 - alpha, 0, 0.5, 0) end
-		if hexBox then hexBox.Text = "#" .. hexOf(value) end
-		if pctLabel then pctLabel.Text = tostring(math.floor((1 - alpha) * 100 + 0.5)) .. "%" end
-	end
 	local function commit()
+		sw1.BackgroundColor3 = slotColor(1)
+		sw2.BackgroundColor3 = slotColor(2)
+		local value = isGradient and { slotColor(1), slotColor(2) } or slotColor(1)
+		local al = isGradient and { slots[1].alpha, slots[2].alpha } or slots[1].alpha
 		if opts.flag then NEMESIS.Flags[opts.flag] = value end
-		if type(opts.callback) == "function" then pcall(opts.callback, value, alpha) end
+		if type(opts.callback) == "function" then pcall(opts.callback, value, al) end
+	end
+	local function syncUI()
+		local c = cur()
+		local col = Color3.fromHSV(c.h, c.s, c.v)
+		if active == 1 then sw1.BackgroundColor3 = col else sw2.BackgroundColor3 = col end
+		if svBase then svBase.BackgroundColor3 = Color3.fromHSV(c.h, 1, 1) end
+		if svDot then svDot.Position = UDim2.new(c.s, 0, 1 - c.v, 0) end
+		if hueDot then hueDot.Position = UDim2.new(c.h, 0, 0.5, 0) end
+		if alphaBar then alphaBar.BackgroundColor3 = col end
+		if alphaDot then alphaDot.Position = UDim2.new(1 - c.alpha, 0, 0.5, 0) end
+		if hexBox then hexBox.Text = "#" .. hexOf(col) end
+		if headSwatch then headSwatch.BackgroundColor3 = col end
+		if headHex then headHex.Text = "#" .. hexOf(col) end
+		if pctLabel then pctLabel.Text = tostring(math.floor((1 - c.alpha) * 100 + 0.5)) .. "%" end
+	end
+	local function setColor(col)
+		local c = cur()
+		c.h, c.s, c.v = col:ToHSV()
+		syncUI(); commit()
+	end
+
+	-- a small two-option segmented control (returns paint fn)
+	local function segmented(width, lOpt, rOpt, onPick)
+		local frame = Create("Frame", {
+			Size = UDim2.new(0, width, 0, 22), BackgroundColor3 = THEME.Element,
+			Parent = nil,
+		}, { corner(7), stroke(THEME.ElementStroke, 1, 0.4) })
+		local sel = 1
+		local btns = {}
+		for i, label in ipairs({ lOpt, rOpt }) do
+			local b = Create("TextButton", {
+				Size = UDim2.new(0.5, -3, 1, -6), Position = UDim2.new((i - 1) * 0.5, i == 1 and 3 or 0, 0, 3),
+				BackgroundColor3 = accent, BackgroundTransparency = 1, AutoButtonColor = false,
+				Font = FONT_MED, Text = label, TextColor3 = THEME.SubText, TextSize = 13,
+				Parent = frame,
+			}, { corner(5) })
+			btns[i] = b
+			b.MouseButton1Click:Connect(function() sel = i; onPick(i) end)
+		end
+		local function paint()
+			for i, b in ipairs(btns) do
+				local on = (i == sel)
+				tween(b, { BackgroundTransparency = on and 0.1 or 1 }, TI.FAST)
+				tween(b, { TextColor3 = on and Color3.new(1, 1, 1) or THEME.SubText }, TI.FAST)
+			end
+		end
+		paint()
+		return frame, function(i) sel = i; paint() end
 	end
 
 	local function buildPanel()
-		-- full-screen click-catcher: tapping anywhere outside the panel closes it
 		backdrop = Create("TextButton", {
-			Name = "ColorBackdrop",
-			Size = UDim2.new(1, 0, 1, 0),
-			BackgroundTransparency = 1,
-			AutoButtonColor = false,
-			Text = "",
-			Visible = false,
-			ZIndex = 50000,
-			Parent = screenGui,
+			Name = "ColorBackdrop", Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1,
+			AutoButtonColor = false, Text = "", Visible = false, ZIndex = 50000, Parent = screenGui,
 		})
 		backdrop.MouseButton1Click:Connect(function() openPanel(false) end)
-		-- CanvasGroup so the whole panel fades uniformly via GroupTransparency
 		panel = Create("CanvasGroup", {
-			Name = "ColorPanel",
-			Size = UDim2.new(0, 230, 0, 250),
-			BackgroundColor3 = THEME.Group,
-			GroupTransparency = 1,
-			Visible = false,
-			ZIndex = 50001,
-			Parent = screenGui,
+			Name = "ColorPanel", Size = UDim2.new(0, 250, 0, 360), BackgroundColor3 = THEME.Group,
+			GroupTransparency = 1, Visible = false, ZIndex = 50001, Parent = screenGui,
 		}, {
-			corner(14),
-			stroke(THEME.Stroke, 1, 0),
-			padding(10),
+			corner(14), stroke(THEME.Stroke, 1, 0), padding(10),
 			Create("UIListLayout", { Padding = UDim.new(0, 8), SortOrder = Enum.SortOrder.LayoutOrder }),
 		})
 
-		local sv = Create("Frame", {
-			Size = UDim2.new(1, 0, 0, 130),
-			BackgroundColor3 = Color3.fromHSV(h, 1, 1),
-			Parent = panel,
-		}, { corner(6) })
+		-- header: live swatch + hex + mode toggle
+		local head = Create("Frame", { Size = UDim2.new(1, 0, 0, 24), BackgroundTransparency = 1, LayoutOrder = 1, Parent = panel })
+		headSwatch = Create("Frame", {
+			AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 0, 0.5, 0), Size = UDim2.new(0, 22, 0, 22),
+			BackgroundColor3 = slotColor(active), Parent = head,
+		}, { corner(6), stroke(THEME.Stroke, 1, 0.3) })
+		headHex = Create("TextLabel", {
+			AnchorPoint = Vector2.new(0, 0.5), Position = UDim2.new(0, 30, 0.5, 0), Size = UDim2.new(0, 90, 1, 0),
+			BackgroundTransparency = 1, Font = FONT_BOLD, Text = "#FFFFFF", TextColor3 = THEME.Text, TextSize = 15,
+			TextXAlignment = Enum.TextXAlignment.Left, Parent = head,
+		})
+		local modeSeg
+		modeSeg, setModeVisual = segmented(120, "Single", "Gradient", function(i)
+			isGradient = (i == 2)
+			setModeVisual(i)
+			if not isGradient then active = 1 end
+			slotRow.Visible = isGradient
+			slotRow.Size = UDim2.new(1, 0, 0, isGradient and 22 or 0)
+			layoutSwatches()
+			syncUI(); commit()
+		end)
+		modeSeg.AnchorPoint = Vector2.new(1, 0.5)
+		modeSeg.Position = UDim2.new(1, 0, 0.5, 0)
+		modeSeg.Parent = head
+		setModeVisual(isGradient and 2 or 1)
+
+		-- slot selector (gradient only): First / Second
+		local slotSeg
+		slotSeg, setSlotVisual = segmented(160, "First", "Second", function(i)
+			active = i; setSlotVisual(i); syncUI()
+		end)
+		slotRow = Create("Frame", { Size = UDim2.new(1, 0, 0, isGradient and 22 or 0), BackgroundTransparency = 1, LayoutOrder = 2, Visible = isGradient, Parent = panel })
+		slotSeg.AnchorPoint = Vector2.new(0.5, 0.5)
+		slotSeg.Position = UDim2.new(0.5, 0, 0.5, 0)
+		slotSeg.Parent = slotRow
+
+		-- SV square
+		local sv = Create("Frame", { Size = UDim2.new(1, 0, 0, 120), BackgroundColor3 = Color3.fromHSV(cur().h, 1, 1), LayoutOrder = 3, Parent = panel }, { corner(6) })
 		svBase = sv
-		Create("Frame", {
-			Size = UDim2.new(1, 0, 1, 0),
-			BackgroundColor3 = Color3.new(1, 1, 1),
-			Parent = sv,
-		}, { corner(6), Create("UIGradient", { Transparency = numSeq(0, 1) }) })
-		Create("Frame", {
-			Size = UDim2.new(1, 0, 1, 0),
-			BackgroundColor3 = Color3.new(0, 0, 0),
-			Parent = sv,
-		}, { corner(6), Create("UIGradient", { Rotation = 90, Transparency = numSeq(1, 0) }) })
+		Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(1, 1, 1), Parent = sv }, { corner(6), Create("UIGradient", { Transparency = numSeq(0, 1) }) })
+		Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Color3.new(0, 0, 0), Parent = sv }, { corner(6), Create("UIGradient", { Rotation = 90, Transparency = numSeq(1, 0) }) })
 		svDot = Create("Frame", {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(s, 0, 1 - v, 0),
-			Size = UDim2.new(0, 10, 0, 10),
-			BackgroundColor3 = Color3.new(1, 1, 1),
-			ZIndex = 52,
-			Parent = sv,
+			AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(cur().s, 0, 1 - cur().v, 0), Size = UDim2.new(0, 10, 0, 10),
+			BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 52, Parent = sv,
 		}, { corner(5), stroke(Color3.new(0, 0, 0), 1, 0.3) })
 		local svHit = Create("TextButton", { BackgroundTransparency = 1, Size = UDim2.new(1, 0, 1, 0), Text = "", ZIndex = 53, Parent = sv })
 		do
@@ -1564,13 +1636,11 @@ function Elements.ColorPicker(parent, accent, opts)
 			local function upd(input)
 				local rx = math.clamp((input.Position.X - sv.AbsolutePosition.X) / sv.AbsoluteSize.X, 0, 1)
 				local ry = math.clamp((input.Position.Y - sv.AbsolutePosition.Y) / sv.AbsoluteSize.Y, 0, 1)
-				s = rx; v = 1 - ry
+				cur().s = rx; cur().v = 1 - ry
 				syncUI(); commit()
 			end
 			svHit.InputBegan:Connect(function(input)
-				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-					dragging = true; upd(input)
-				end
+				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = true; upd(input) end
 			end)
 			UserInputService.InputEnded:Connect(function(input)
 				if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
@@ -1580,63 +1650,71 @@ function Elements.ColorPicker(parent, accent, opts)
 			end)
 		end
 
-		-- neverlose-style: thin pill bars with round circular draggers
-		local hue = Create("Frame", { Size = UDim2.new(1, 0, 0, 8), Parent = panel }, {
-			corner(4),
-			Create("UIGradient", { Color = hueSequence() }),
-		})
-		hueDot = Create("Frame", {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(h, 0, 0.5, 0),
-			Size = UDim2.new(0, 12, 0, 12),
-			BackgroundColor3 = Color3.new(1, 1, 1),
-			ZIndex = 52,
-			Parent = hue,
-		}, { corner(6), stroke(Color3.new(0, 0, 0), 1, 0.35) })
-		bindBarDrag(hue, function(rel) h = rel; syncUI(); commit() end)
+		local hue = Create("Frame", { Size = UDim2.new(1, 0, 0, 8), LayoutOrder = 4, Parent = panel }, { corner(4), Create("UIGradient", { Color = hueSequence() }) })
+		hueDot = Create("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(cur().h, 0, 0.5, 0), Size = UDim2.new(0, 12, 0, 12), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 52, Parent = hue }, { corner(6), stroke(Color3.new(0, 0, 0), 1, 0.35) })
+		bindBarDrag(hue, function(rel) cur().h = rel; syncUI(); commit() end)
 
-		alphaBar = Create("Frame", { Size = UDim2.new(1, 0, 0, 8), BackgroundColor3 = value, Parent = panel }, {
-			corner(4),
-			Create("UIGradient", { Transparency = numSeq(0, 1) }),
-		})
-		alphaDot = Create("Frame", {
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(1 - alpha, 0, 0.5, 0),
-			Size = UDim2.new(0, 12, 0, 12),
-			BackgroundColor3 = Color3.new(1, 1, 1),
-			ZIndex = 52,
-			Parent = alphaBar,
-		}, { corner(6), stroke(Color3.new(0, 0, 0), 1, 0.35) })
-		bindBarDrag(alphaBar, function(rel) alpha = 1 - rel; syncUI(); commit() end)
+		alphaBar = Create("Frame", { Size = UDim2.new(1, 0, 0, 8), BackgroundColor3 = slotColor(active), LayoutOrder = 5, Parent = panel }, { corner(4), Create("UIGradient", { Transparency = numSeq(0, 1) }) })
+		alphaDot = Create("Frame", { AnchorPoint = Vector2.new(0.5, 0.5), Position = UDim2.new(1 - cur().alpha, 0, 0.5, 0), Size = UDim2.new(0, 12, 0, 12), BackgroundColor3 = Color3.new(1, 1, 1), ZIndex = 52, Parent = alphaBar }, { corner(6), stroke(Color3.new(0, 0, 0), 1, 0.35) })
+		bindBarDrag(alphaBar, function(rel) cur().alpha = 1 - rel; syncUI(); commit() end)
 
-		local hexRow = Create("Frame", { Size = UDim2.new(1, 0, 0, 26), BackgroundTransparency = 1, Parent = panel })
+		-- preset palette + saved colours (one grid; presets first, then saved, then +)
+		local PRESETS = {
+			Color3.fromRGB(255, 71, 71), Color3.fromRGB(255, 138, 61), Color3.fromRGB(255, 210, 40),
+			Color3.fromRGB(90, 255, 120), Color3.fromRGB(60, 220, 255), Color3.fromRGB(90, 140, 255),
+			Color3.fromRGB(150, 85, 255), Color3.fromRGB(255, 90, 200), Color3.fromRGB(255, 255, 255),
+			Color3.fromRGB(160, 160, 170), Color3.fromRGB(60, 60, 70), Color3.fromRGB(15, 15, 20),
+		}
+		local gridWrap = Create("Frame", { Size = UDim2.new(1, 0, 0, 60), BackgroundTransparency = 1, LayoutOrder = 6, Parent = panel })
+		local grid = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Parent = gridWrap }, {
+			Create("UIGridLayout", { CellSize = UDim2.new(0, 28, 0, 26), CellPadding = UDim2.new(0, 6, 0, 6), SortOrder = Enum.SortOrder.LayoutOrder }),
+		})
+		local function swatchTile(color, order, isAdd)
+			local t = Create("TextButton", {
+				BackgroundColor3 = isAdd and THEME.Element or color, AutoButtonColor = false, Text = isAdd and "+" or "",
+				Font = FONT_BOLD, TextColor3 = THEME.SubText, TextSize = 16, LayoutOrder = order, Parent = grid,
+			}, { corner(6), stroke(THEME.ElementStroke, 1, 0.4) })
+			t.MouseButton1Click:Connect(function()
+				if isAdd then
+					table.insert(saved, slotColor(active)); rebuildSaved()
+				else
+					setColor(color)
+				end
+			end)
+			return t
+		end
+		rebuildSaved = function()
+			for _, c in ipairs(grid:GetChildren()) do
+				if c:IsA("TextButton") then c:Destroy() end
+			end
+			local order = 0
+			for _, c in ipairs(PRESETS) do order = order + 1; swatchTile(c, order) end
+			for _, c in ipairs(saved) do order = order + 1; swatchTile(c, order) end
+			order = order + 1; swatchTile(nil, order, true)
+		end
+		rebuildSaved()
+
+		-- Custom hex
+		local hexRow = Create("Frame", { Size = UDim2.new(1, 0, 0, 26), BackgroundTransparency = 1, LayoutOrder = 7, Parent = panel })
 		Create("TextLabel", {
-			BackgroundTransparency = 1, Size = UDim2.new(0, 36, 1, 0),
-			Font = FONT_BOLD, Text = "HEX", TextColor3 = THEME.SubText, TextSize = 14,
-			TextXAlignment = Enum.TextXAlignment.Left, Parent = hexRow,
+			BackgroundTransparency = 1, Size = UDim2.new(0, 60, 1, 0), Font = FONT_BOLD, Text = "Custom:",
+			TextColor3 = THEME.SubText, TextSize = 14, TextXAlignment = Enum.TextXAlignment.Left, Parent = hexRow,
 		})
 		hexBox = Create("TextBox", {
-			Position = UDim2.new(0, 40, 0, 0), Size = UDim2.new(1, -90, 1, 0),
-			BackgroundColor3 = THEME.Element, Font = FONT, Text = "#FFFFFF",
-			TextColor3 = THEME.Text, TextSize = 15, ClipsDescendants = true,
+			Position = UDim2.new(0, 64, 0, 0), Size = UDim2.new(1, -110, 1, 0), BackgroundColor3 = THEME.Element,
+			Font = FONT, Text = "#FFFFFF", TextColor3 = THEME.Text, TextSize = 15, ClipsDescendants = true,
 			TextTruncate = Enum.TextTruncate.AtEnd, Parent = hexRow,
 		}, { corner(6), stroke(THEME.Stroke, 1, 0.3), padding(6) })
 		pctLabel = Create("TextLabel", {
-			AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 44, 1, 0),
+			AnchorPoint = Vector2.new(1, 0.5), Position = UDim2.new(1, 0, 0.5, 0), Size = UDim2.new(0, 40, 1, 0),
 			BackgroundTransparency = 1, Font = FONT_MED, Text = "100%", TextColor3 = THEME.SubText, TextSize = 15,
 			TextXAlignment = Enum.TextXAlignment.Right, Parent = hexRow,
 		})
 		hexBox.FocusLost:Connect(function()
 			local hex = string.gsub(hexBox.Text, "#", "")
 			if #hex == 6 then
-				local r = tonumber(string.sub(hex, 1, 2), 16)
-				local g = tonumber(string.sub(hex, 3, 4), 16)
-				local b = tonumber(string.sub(hex, 5, 6), 16)
-				if r and g and b then
-					h, s, v = Color3.fromRGB(r, g, b):ToHSV()
-					syncUI(); commit()
-					return
-				end
+				local r, g, b = tonumber(hex:sub(1, 2), 16), tonumber(hex:sub(3, 4), 16), tonumber(hex:sub(5, 6), 16)
+				if r and g and b then setColor(Color3.fromRGB(r, g, b)); return end
 			end
 			syncUI()
 		end)
@@ -1644,19 +1722,19 @@ function Elements.ColorPicker(parent, accent, opts)
 		syncUI()
 	end
 
-	openPanel = function(state)
+	openPanel = function(state, slot)
 		if not panel then buildPanel() end
+		if slot then active = slot; if setSlotVisual then setSlotVisual(slot) end; syncUI() end
 		local want = (state == nil) and (not opened) or state
 		if want == opened then return end
 		opened = want
 		if opened then
-			-- close any other open overlay (dropdown / colorpicker), claim the slot
 			if _ddCurrent and _ddCurrent ~= cpHandle then _ddCurrent.close() end
 			_ddCurrent = cpHandle
-			local tx, ty = 0.5 * 1920 - 115, 0.5 * 1080 - 125
+			local tx, ty = 0.5 * 1920 - 125, 0.5 * 1080 - 180
 			pcall(function()
-				local p = swatch.AbsolutePosition
-				tx, ty = p.X - 184, p.Y + 30
+				local p = sw1.AbsolutePosition
+				tx, ty = p.X - 200, p.Y + 30
 			end)
 			backdrop.Visible = true
 			panel.Visible = true
@@ -1672,24 +1750,31 @@ function Elements.ColorPicker(parent, accent, opts)
 	end
 	cpHandle.close = function() openPanel(false) end
 
-	swatch.MouseButton1Click:Connect(function() openPanel() end)
-	swatch.MouseButton2Click:Connect(function()
-		local hex = "#" .. hexOf(value)
+	sw1.MouseButton1Click:Connect(function() openPanel(nil, 1) end)
+	sw2.MouseButton1Click:Connect(function() openPanel(nil, 2) end)
+	sw1.MouseButton2Click:Connect(function()
+		local hex = "#" .. hexOf(slotColor(1))
 		if setClipboard(hex) then NEMESIS.Notify({ title = "Copied", content = hex, duration = 2 }) end
 	end)
 
 	function control.Set(c, a)
-		value = c
-		h, s, v = c:ToHSV()
-		if a ~= nil then alpha = a end
-		swatch.BackgroundColor3 = c
+		slots[1].h, slots[1].s, slots[1].v = c:ToHSV()
+		if a ~= nil then slots[1].alpha = a end
 		if panel then syncUI() end
 		commit()
 	end
-	function control.Get() return value end
-	function control.GetAlpha() return alpha end
+	function control.SetGradient(c1, c2)
+		isGradient = true
+		slots[1].h, slots[1].s, slots[1].v = (c1 or slotColor(1)):ToHSV()
+		slots[2].h, slots[2].s, slots[2].v = (c2 or slotColor(2)):ToHSV()
+		if slotRow then slotRow.Visible = true; slotRow.Size = UDim2.new(1, 0, 0, 22) end
+		if setModeVisual then setModeVisual(2) end
+		layoutSwatches(); if panel then syncUI() end; commit()
+	end
+	function control.Get() return isGradient and { slotColor(1), slotColor(2) } or slotColor(1) end
+	function control.GetAlpha() return isGradient and { slots[1].alpha, slots[2].alpha } or slots[1].alpha end
 
-	if opts.flag then NEMESIS.Flags[opts.flag] = value end
+	commit()
 	return control
 end
 
