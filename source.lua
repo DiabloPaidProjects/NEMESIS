@@ -1446,6 +1446,8 @@ function Elements.ColorPicker(parent, accent, opts)
 
 	local control = {}
 	local panel, svBase, svDot, hueDot, alphaBar, alphaDot, hexBox, pctLabel
+	local backdrop, openPanel
+	local cpHandle = {}
 	local opened = false
 
 	local function colorNow() return Color3.fromHSV(h, s, v) end
@@ -1466,12 +1468,26 @@ function Elements.ColorPicker(parent, accent, opts)
 	end
 
 	local function buildPanel()
-		panel = Create("Frame", {
+		-- full-screen click-catcher: tapping anywhere outside the panel closes it
+		backdrop = Create("TextButton", {
+			Name = "ColorBackdrop",
+			Size = UDim2.new(1, 0, 1, 0),
+			BackgroundTransparency = 1,
+			AutoButtonColor = false,
+			Text = "",
+			Visible = false,
+			ZIndex = 50000,
+			Parent = screenGui,
+		})
+		backdrop.MouseButton1Click:Connect(function() openPanel(false) end)
+		-- CanvasGroup so the whole panel fades uniformly via GroupTransparency
+		panel = Create("CanvasGroup", {
 			Name = "ColorPanel",
 			Size = UDim2.new(0, 230, 0, 250),
 			BackgroundColor3 = THEME.Group,
+			GroupTransparency = 1,
 			Visible = false,
-			ZIndex = 50,
+			ZIndex = 50001,
 			Parent = screenGui,
 		}, {
 			corner(14),
@@ -1589,23 +1605,33 @@ function Elements.ColorPicker(parent, accent, opts)
 		syncUI()
 	end
 
-	local function openPanel(state)
+	openPanel = function(state)
 		if not panel then buildPanel() end
-		opened = (state == nil) and (not opened) or state
+		local want = (state == nil) and (not opened) or state
+		if want == opened then return end
+		opened = want
 		if opened then
-			local ok = pcall(function()
+			-- close any other open overlay (dropdown / colorpicker), claim the slot
+			if _ddCurrent and _ddCurrent ~= cpHandle then _ddCurrent.close() end
+			_ddCurrent = cpHandle
+			local tx, ty = 0.5 * 1920 - 115, 0.5 * 1080 - 125
+			pcall(function()
 				local p = swatch.AbsolutePosition
-				panel.Position = UDim2.fromOffset(p.X - 184, p.Y + 30)
+				tx, ty = p.X - 184, p.Y + 30
 			end)
-			if not ok then panel.Position = UDim2.new(0.5, -115, 0.5, -125) end
+			backdrop.Visible = true
 			panel.Visible = true
-			panel.Size = UDim2.new(0, 230, 0, 0)
-			tween(panel, { Size = UDim2.new(0, 230, 0, 250) }, TI.EXPAND)
+			panel.GroupTransparency = 1
+			panel.Position = UDim2.fromOffset(tx, ty + 8)
+			tween(panel, { GroupTransparency = 0, Position = UDim2.fromOffset(tx, ty) }, TI.FAST)
 		else
-			tween(panel, { Size = UDim2.new(0, 230, 0, 0) }, TI.SLIDE)
-			task.delay(0.2, function() if not opened and panel then panel.Visible = false end end)
+			if _ddCurrent == cpHandle then _ddCurrent = nil end
+			backdrop.Visible = false
+			tween(panel, { GroupTransparency = 1 }, TI.FAST)
+			task.delay(0.18, function() if not opened and panel then panel.Visible = false end end)
 		end
 	end
+	cpHandle.close = function() openPanel(false) end
 
 	swatch.MouseButton1Click:Connect(function() openPanel() end)
 	swatch.MouseButton2Click:Connect(function()
