@@ -2654,7 +2654,10 @@ function NEMESIS.Window(opts)
 	end
 
 	-- Tab / Group / Page builders
-	function Win.Tab(name, icon)
+	function Win.Tab(name, icon, ...)
+		-- Tolerate method-style calls: Window:Tab("X") passes Window as the first
+		-- arg, so shift it off (otherwise the name becomes the table).
+		if name == Win then name, icon = icon, ... end
 		local tab = { name = tostring(name or "Tab"), pages = {}, activePage = nil }
 
 		-- a full-height hairline sits BETWEEN tabs (its own list item, so it never
@@ -2895,7 +2898,8 @@ function NEMESIS.Window(opts)
 		end
 
 		local Tab = {}
-		function Tab.Group(gname)
+		function Tab.Group(gname, ...)
+			if gname == Tab then gname = ... end -- tolerate Tab:Group("X")
 			groupCount = groupCount + 1
 			-- hairline separating this group from the previous one
 			if groupCount > 1 then
@@ -3012,7 +3016,8 @@ function NEMESIS.Window(opts)
 			return Group
 		end
 
-		function Tab.Page(pname, popts)
+		function Tab.Page(pname, popts, ...)
+			if pname == Tab then pname, popts = popts, ... end -- tolerate Tab:Page("X")
 			if not standaloneStarted and groupCount > 0 then
 				standaloneStarted = true
 				Create("Frame", { -- gap before standalone items
